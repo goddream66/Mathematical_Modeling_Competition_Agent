@@ -3,6 +3,13 @@ export type ReportSection = {
   title: string;
 };
 
+export type ApiErrorPayload = {
+  code: string;
+  message: string;
+  stage: string;
+  detail: Record<string, unknown>;
+};
+
 export type UploadSummary = {
   role: string;
   name: string;
@@ -37,6 +44,17 @@ export type TaskStateSummary = {
     review_findings: Array<Record<string, unknown>>;
     solved_subproblems: string[];
     partial_subproblems: string[];
+    verification_summary?: {
+      overall_verdict?: string;
+      failed_check_count?: number;
+      uncited_subproblems?: string[];
+      missing_required_sections?: string[];
+      report_checks?: {
+        section_count?: number;
+        required_section_count?: number;
+      };
+    };
+    report_sources?: Record<string, unknown>;
   };
 };
 
@@ -50,11 +68,14 @@ export type ReportPayload = {
 export type SessionSummary = {
   session_id: string;
   created_at: string;
+  updated_at: string;
   messages: string[];
   problem_files: UploadSummary[];
   data_files: UploadSummary[];
   selected_sections: string[];
   latest_state: TaskStateSummary | null;
+  latest_report_md?: string;
+  latest_error?: ApiErrorPayload | null;
   report_ready: boolean;
   report?: ReportPayload;
 };

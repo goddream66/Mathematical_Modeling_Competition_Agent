@@ -13,7 +13,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
-    const message = payload?.detail ?? `Request failed with status ${response.status}`;
+    const detail = payload?.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : detail?.message ?? `Request failed with status ${response.status}`;
     throw new Error(message);
   }
 
@@ -22,6 +26,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export async function createSession(): Promise<SessionSummary> {
   return request<SessionSummary>("/api/sessions", { method: "POST" });
+}
+
+export async function listSessions(): Promise<{ sessions: SessionSummary[] }> {
+  return request<{ sessions: SessionSummary[] }>("/api/sessions");
+}
+
+export async function getSession(sessionId: string): Promise<SessionSummary> {
+  return request<SessionSummary>(`/api/sessions/${sessionId}`);
 }
 
 export async function getMeta(): Promise<{ sections: ReportSection[] }> {
@@ -62,5 +74,11 @@ export async function runSession(sessionId: string, sections: string[]): Promise
   return request<SessionSummary>(`/api/sessions/${sessionId}/run`, {
     method: "POST",
     body: JSON.stringify({ sections }),
+  });
+}
+
+export async function deleteSession(sessionId: string): Promise<{ status: string }> {
+  return request<{ status: string }>(`/api/sessions/${sessionId}`, {
+    method: "DELETE",
   });
 }

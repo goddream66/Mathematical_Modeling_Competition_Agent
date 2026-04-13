@@ -1,0 +1,16 @@
+{
+  "session_id": "fdd8399b996345b6bda1b9772d6acc0a",
+  "created_at": "2026-04-13T09:56:12Z",
+  "updated_at": "2026-04-13T09:56:12Z",
+  "root_dir": "tests\\web_outputs\\fdd8399b996345b6bda1b9772d6acc0a",
+  "messages": [
+    "Problem 1: optimize profit under budget 100."
+  ],
+  "problem_files": [],
+  "data_files": [],
+  "selected_sections": [],
+  "latest_state": null,
+  "latest_report_md": "",
+  "latest_error": null,
+  "report_ready": false
+}

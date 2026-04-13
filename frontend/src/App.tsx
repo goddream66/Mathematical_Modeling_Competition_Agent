@@ -1,6 +1,17 @@
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
-import { addMessage, createSession, getMeta, runSession, setSections, uploadFiles } from "./api";
+import {
+  addMessage,
+  createSession,
+  deleteSession,
+  getMeta,
+  getSession,
+  listSessions,
+  runSession,
+  setSections,
+  uploadFiles,
+} from "./api";
 import { ChatPanel } from "./components/ChatPanel";
+import { HistoryPanel } from "./components/HistoryPanel";
 import { ReportViewer } from "./components/ReportViewer";
 import { SectionSelector } from "./components/SectionSelector";
 import { StatusPanel } from "./components/StatusPanel";
@@ -9,6 +20,7 @@ import type { ReportSection, SessionSummary } from "./types";
 
 export default function App() {
   const [session, setSession] = useState<SessionSummary | null>(null);
+  const [sessionHistory, setSessionHistory] = useState<SessionSummary[]>([]);
   const [sections, setSectionOptions] = useState<ReportSection[]>([]);
   const [selectedSections, setSelectedSections] = useState<string[]>([]);
   const [draftMessage, setDraftMessage] = useState("");
@@ -25,14 +37,18 @@ export default function App() {
       setBusy(true);
       setErrorMessage("");
       try {
-        const [meta, nextSession] = await Promise.all([getMeta(), createSession()]);
+        const [meta, sessionsPayload] = await Promise.all([getMeta(), listSessions()]);
         if (cancelled) {
           return;
         }
+        const nextSession =
+          sessionsPayload.sessions[0] ?? (await createSession());
         startTransition(() => {
           setSectionOptions(meta.sections);
+          setSessionHistory(sessionsPayload.sessions.length > 0 ? sessionsPayload.sessions : [nextSession]);
           setSession(nextSession);
           setSelectedSections(nextSession.selected_sections);
+          setReportMarkdown(nextSession.latest_report_md ?? "");
           setStatusMessage("Session ready. Add the problem statement, upload files, then run the pipeline.");
         });
       } catch (error) {
@@ -61,8 +77,7 @@ export default function App() {
     try {
       const payload = await setSections(session.session_id, nextSections);
       startTransition(() => {
-        setSession(payload);
-        setSelectedSections(payload.selected_sections);
+        syncSessionState(payload);
         setStatusMessage(
           payload.selected_sections.length === 0
             ? "Report section filter reset to full draft."
@@ -85,7 +100,7 @@ export default function App() {
     try {
       const payload = await addMessage(session.session_id, draftMessage);
       startTransition(() => {
-        setSession(payload);
+        syncSessionState(payload);
         setDraftMessage("");
         setStatusMessage("Message saved. Keep refining the task, or run the pipeline.");
       });
@@ -105,7 +120,7 @@ export default function App() {
     try {
       const payload = await uploadFiles(session.session_id, role, files);
       startTransition(() => {
-        setSession(payload);
+        syncSessionState(payload);
         setStatusMessage(
           role === "problem"
             ? "Problem file uploaded. You can still add multi-turn clarifications in chat."
@@ -128,7 +143,7 @@ export default function App() {
     try {
       const payload = await runSession(session.session_id, selectedSections);
       startTransition(() => {
-        setSession(payload);
+        syncSessionState(payload);
         setReportMarkdown(payload.report?.selected_report_md ?? "");
         setStatusMessage("Pipeline finished. Review the paper draft and iterate with new messages or data.");
       });
@@ -144,6 +159,83 @@ export default function App() {
       ? selectedSections.filter((item) => item !== key)
       : [...selectedSections, key];
     void syncSections(nextSections);
+  }
+
+  async function handleCreateSession() {
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      const payload = await createSession();
+      startTransition(() => {
+        syncSessionState(payload, { prepend: true });
+        setDraftMessage("");
+        setReportMarkdown("");
+        setStatusMessage("New session created. Add the problem statement or upload files.");
+      });
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSelectSession(sessionId: string) {
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      const payload = await getSession(sessionId);
+      startTransition(() => {
+        syncSessionState(payload);
+        setReportMarkdown(payload.latest_report_md ?? "");
+        setStatusMessage("Restored a previous session.");
+      });
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDeleteSession(sessionId: string) {
+    setBusy(true);
+    setErrorMessage("");
+    try {
+      await deleteSession(sessionId);
+      const payload = await listSessions();
+      startTransition(() => {
+        setSessionHistory(payload.sessions);
+        if (session?.session_id === sessionId) {
+          const nextSession = payload.sessions[0] ?? null;
+          setSession(nextSession);
+          setSelectedSections(nextSession?.selected_sections ?? []);
+          setReportMarkdown(nextSession?.latest_report_md ?? "");
+        }
+        setStatusMessage("Session deleted.");
+      });
+    } catch (error) {
+      setErrorMessage((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function syncSessionState(
+    payload: SessionSummary,
+    options: {
+      prepend?: boolean;
+    } = {},
+  ) {
+    setSession(payload);
+    setSelectedSections(payload.selected_sections);
+    setSessionHistory((current) => {
+      const filtered = current.filter((item) => item.session_id !== payload.session_id);
+      return options.prepend ? [payload, ...filtered] : [payload, ...filtered];
+    });
+    if (payload.latest_error?.message) {
+      setErrorMessage(`[${payload.latest_error.stage}] ${payload.latest_error.message}`);
+    } else {
+      setErrorMessage("");
+    }
   }
 
   return (
@@ -170,6 +262,14 @@ export default function App() {
 
       <div className="dashboard-grid">
         <div className="left-stack">
+          <HistoryPanel
+            activeSessionId={session?.session_id ?? null}
+            busy={busy}
+            onCreate={() => void handleCreateSession()}
+            onSelect={(sessionId) => void handleSelectSession(sessionId)}
+            onDelete={(sessionId) => void handleDeleteSession(sessionId)}
+            sessions={sessionHistory}
+          />
           <ChatPanel
             messages={session?.messages ?? []}
             draftMessage={draftMessage}

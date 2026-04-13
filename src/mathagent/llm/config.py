@@ -51,8 +51,8 @@ def load_llm_config(prefix: str, *, config_path: str | Path | None = None) -> LL
         return None
 
     provider = str(section.get("provider") or os.getenv(p + "PROVIDER", "openai")).strip()
-    base_url = str(section.get("base_url") or os.getenv(p + "BASE_URL", "https://api.openai.com")).strip()
-    model = str(section.get("model") or os.getenv(p + "MODEL", "gpt-4o-mini")).strip()
+    base_url = str(section.get("base_url") or os.getenv(p + "BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")).strip()
+    model = str(section.get("model") or os.getenv(p + "MODEL", "qwen-flash-character")).strip()
     options = _coerce_options(section.get("options"))
     return LLMConfig(
         provider=provider,

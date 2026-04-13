@@ -116,6 +116,11 @@ input {
   font-weight: 700;
 }
 
+.compact-button {
+  padding: 10px 14px;
+  font-size: 0.92rem;
+}
+
 .accent-button:hover:not(:disabled),
 .ghost-button:hover:not(:disabled),
 .section-chip:hover:not(:disabled) {
@@ -274,7 +279,8 @@ input {
 }
 
 .file-list li,
-.subproblem-card {
+.subproblem-card,
+.history-card {
   display: flex;
   justify-content: space-between;
   gap: 14px;
@@ -283,6 +289,36 @@ input {
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.68);
   border: 1px solid rgba(16, 35, 38, 0.08);
+}
+
+.history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.history-card {
+  align-items: stretch;
+}
+
+.history-card.active {
+  border-color: rgba(15, 118, 110, 0.25);
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.12), rgba(255, 255, 255, 0.8));
+}
+
+.history-select {
+  border: none;
+  background: transparent;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+  cursor: pointer;
+  color: inherit;
+  flex: 1;
+}
+
+.history-select span {
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .file-list code,

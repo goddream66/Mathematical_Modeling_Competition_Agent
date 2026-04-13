@@ -1,0 +1,240 @@
+{
+  "stage": "done",
+  "clarifications": [
+    "Which variables are the decision variables, state variables, and outputs?",
+    "Which constraints must always hold?",
+    "Which claims require quantitative evidence before they can appear in the final paper?"
+  ],
+  "subproblem_count": 1,
+  "subproblems": [
+    {
+      "title": "Problem 1",
+      "objective": "建立预测模型并给出可解释的误差评估。",
+      "chosen_method": "线性/非线性回归",
+      "task_types": [
+        "预测/拟合"
+      ]
+    }
+  ],
+  "solver_run_count": 1,
+  "solver_runs": [
+    {
+      "subproblem_title": "Problem 1",
+      "success": true,
+      "schema_valid": true,
+      "summary": "Forecast solver template generated a baseline result for Problem 1.",
+      "structured_result": {
+        "subproblem_title": "Problem 1",
+        "status": "ok",
+        "method": "线性/非线性回归",
+        "objective": "建立预测模型并给出可解释的误差评估。",
+        "assumptions": [
+          "变量定义清晰且可以被观测、估计或求解。",
+          "原始题面没有说明的外部环境在分析周期内保持相对稳定。",
+          "历史数据对未来具有一定代表性。"
+        ],
+        "constraints": [
+          "训练与验证数据划分方式需要保持时序一致。"
+        ],
+        "result_summary": "Built a baseline forecast for horizon=3 using 5 historical points with numpy.",
+        "evidence": [
+          "template_used=baseline_forecast_template",
+          "library_used=numpy",
+          "table_name=20260413_175531_1c2b61_forecast_series",
+          "selected_column=demand",
+          "historical_point_count=5",
+          "average_value=15.0",
+          "average_delta=2.600000000000002"
+        ],
+        "numeric_results": {
+          "forecast_horizon": 3,
+          "historical_point_count": 5,
+          "baseline_average": 15.0,
+          "rolling_mean": 17.6667,
+          "baseline_trend": 2.6,
+          "forecast_value": 22.6
+        },
+        "artifacts": [
+          "result.json",
+          "forecast_metrics.json"
+        ],
+        "next_steps": [
+          "Replace the baseline extrapolation with a time-series model if full data is available.",
+          "Validate the forecast with MAE, RMSE, or MAPE once a hold-out set is available."
+        ]
+      },
+      "artifacts": [
+        "forecast_metrics.json",
+        "result.json"
+      ]
+    }
+  ],
+  "results": {
+    "status": "solved",
+    "solver_summary": "Problem 1: ok - Built a baseline forecast for horizon=3 using 5 historical points with numpy.",
+    "review_findings": [
+      {
+        "severity": "medium",
+        "area": "writing",
+        "message": "The report does not consistently cite evidence for Problem 1.",
+        "suggestion": "Mention this subproblem in the relevant section and connect it to numeric results or evidence markers."
+      }
+    ],
+    "solved_subproblems": [
+      "Problem 1"
+    ],
+    "partial_subproblems": [],
+    "verification_summary": {
+      "overall_verdict": "needs_attention",
+      "failed_check_count": 1,
+      "subproblem_checks": [
+        {
+          "title": "Problem 1",
+          "verdict": "ok",
+          "missing_fields": []
+        }
+      ],
+      "solver_checks": [
+        {
+          "subproblem_title": "Problem 1",
+          "verdict": "ok",
+          "issues": []
+        }
+      ],
+      "uncited_subproblems": [
+        "Problem 1"
+      ],
+      "missing_required_sections": [],
+      "report_checks": {
+        "section_count": 8,
+        "required_section_count": 7,
+        "missing_required_sections": []
+      }
+    },
+    "report_sources": {
+      "abstract": {
+        "heading": "# 摘要",
+        "present": true,
+        "referenced_subproblems": [],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "referenced_subproblem_count": 0,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "missing_subproblems": [
+          "Problem 1"
+        ]
+      },
+      "problem": {
+        "heading": "# 问题重述",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "missing_subproblems": []
+      },
+      "analysis": {
+        "heading": "# 子问题分析与方法选择",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "missing_subproblems": []
+      },
+      "modeling": {
+        "heading": "# 模型假设与符号说明",
+        "present": true,
+        "referenced_subproblems": [],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "referenced_subproblem_count": 0,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "missing_subproblems": [
+          "Problem 1"
+        ]
+      },
+      "solving": {
+        "heading": "# 求解与实验",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [
+          "forecast_metrics.json",
+          "result.json"
+        ],
+        "evidence_markers": [
+          "template_used=baseline_forecast_template",
+          "library_used=numpy",
+          "table_name=20260413_175531_1c2b61_forecast_series",
+          "selected_column=demand",
+          "historical_point_count=5",
+          "average_value=15.0",
+          "average_delta=2.600000000000002"
+        ],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 2,
+        "referenced_evidence_count": 7,
+        "missing_subproblems": []
+      },
+      "results": {
+        "heading": "# 结果与分析",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [
+          "template_used=baseline_forecast_template",
+          "library_used=numpy",
+          "table_name=20260413_175531_1c2b61_forecast_series",
+          "selected_column=demand",
+          "historical_point_count=5",
+          "average_value=15.0",
+          "average_delta=2.600000000000002"
+        ],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 7,
+        "missing_subproblems": []
+      },
+      "review": {
+        "heading": "# 审稿提示",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "missing_subproblems": []
+      },
+      "conclusion": {
+        "heading": "# 结论与后续工作",
+        "present": true,
+        "referenced_subproblems": [],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "referenced_subproblem_count": 0,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "missing_subproblems": [
+          "Problem 1"
+        ]
+      }
+    }
+  }
+}

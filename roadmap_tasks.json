@@ -1,0 +1,373 @@
+{
+  "project": "mathagent",
+  "generated_at": "2026-04-13",
+  "summary": {
+    "current_stage": "early product form",
+    "core_direction": [
+      "make sessions recoverable",
+      "make errors diagnosable",
+      "make results verifiable",
+      "make conclusions traceable"
+    ],
+    "avoid": [
+      "blindly adding more agents without improving structure",
+      "over-investing in UI polish before verifier, persistence, and evidence tracing are solid"
+    ]
+  },
+  "recommended_execution_order": [
+    "session_persistence",
+    "unified_error_system",
+    "verifier_upgrade",
+    "evidence_traceability",
+    "skill_system_modularization"
+  ],
+  "versions": [
+    {
+      "version": "v0.2",
+      "goal": "move the system from runnable to stable",
+      "focus": [
+        "verifier",
+        "session persistence",
+        "error feedback",
+        "evidence chain foundation"
+      ],
+      "tasks": [
+        {
+          "id": "verifier_upgrade",
+          "title": "Upgrade Verifier",
+          "priority": "high",
+          "description": "Turn the current review stage into a stronger verifier that checks modeling completeness, solver schema integrity, and whether the report actually cites computed evidence.",
+          "todo": [
+            "add per-subproblem verification verdicts",
+            "check objective, constraints, and chosen_method completeness",
+            "check structured_result schema completeness and validity",
+            "check that report conclusions cite solver outputs",
+            "emit structured verifier output instead of only loose findings"
+          ],
+          "target_modules": [
+            "src/mathagent/agents/specialists_v3.py",
+            "src/mathagent/reporting.py",
+            "src/mathagent/state.py"
+          ],
+          "new_modules": [
+            "src/mathagent/verification/checkers.py",
+            "src/mathagent/verification/schema.py"
+          ],
+          "expected_outputs": [
+            "structured verification results",
+            "more reliable review_findings",
+            "clear severity and evidence per finding"
+          ]
+        },
+        {
+          "id": "session_persistence",
+          "title": "Persist Web Sessions",
+          "priority": "high",
+          "description": "Store web sessions so the user can refresh, resume, and browse earlier modeling tasks.",
+          "todo": [
+            "persist web sessions to sqlite",
+            "restore session after page refresh",
+            "list historical sessions",
+            "reopen previous session state"
+          ],
+          "target_modules": [
+            "src/mathagent/web/service.py",
+            "src/mathagent/web/api.py",
+            "frontend/src/App.tsx"
+          ],
+          "new_modules": [
+            "src/mathagent/web/session_store.py"
+          ],
+          "api_changes": [
+            "GET /api/sessions",
+            "GET /api/sessions/{id}",
+            "DELETE /api/sessions/{id}"
+          ],
+          "expected_outputs": [
+            "persistent sessions",
+            "history sidebar in web UI",
+            "resume previous modeling workflows"
+          ]
+        },
+        {
+          "id": "unified_error_system",
+          "title": "Unify Error Feedback",
+          "priority": "high",
+          "description": "Return consistent structured errors for upload, solving, writing, and runtime failures so the UI can display actionable diagnostics instead of generic 500 errors.",
+          "todo": [
+            "normalize backend errors into a shared schema",
+            "capture upload, solve, write, and runtime stages",
+            "surface actionable messages to frontend",
+            "record the latest failed stage in state"
+          ],
+          "target_modules": [
+            "src/mathagent/web/api.py",
+            "src/mathagent/web/service.py",
+            "frontend/src/api.ts",
+            "frontend/src/App.tsx"
+          ],
+          "new_modules": [
+            "src/mathagent/errors.py"
+          ],
+          "error_schema": {
+            "fields": [
+              "code",
+              "message",
+              "stage",
+              "detail"
+            ]
+          },
+          "expected_outputs": [
+            "human-readable frontend errors",
+            "fewer opaque server failures",
+            "stage-aware debugging"
+          ]
+        },
+        {
+          "id": "evidence_chain_foundation",
+          "title": "Build Evidence Chain Foundation",
+          "priority": "high",
+          "description": "Track which solver runs, artifacts, and subproblems support each report section and major conclusion.",
+          "todo": [
+            "add sources metadata for each report section",
+            "map report sections to subproblem and artifact IDs",
+            "persist report source metadata in state"
+          ],
+          "target_modules": [
+            "src/mathagent/reporting.py",
+            "src/mathagent/state.py",
+            "src/mathagent/agents/specialists_v3.py"
+          ],
+          "expected_outputs": [
+            "traceable report sections",
+            "report_sources metadata",
+            "foundation for citation-like evidence tracing"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "v0.3",
+      "goal": "make the system feel like a real assistant instead of only a workflow runner",
+      "focus": [
+        "skill system",
+        "automatic replanning",
+        "report template upgrades",
+        "chart generation"
+      ],
+      "tasks": [
+        {
+          "id": "skill_system_modularization",
+          "title": "Formalize the Skill System",
+          "priority": "high",
+          "description": "Split the current embedded solver templates into standalone skill modules with explicit match conditions, schemas, and execution logic.",
+          "todo": [
+            "extract forecast, optimization, path, and evaluation skills into dedicated modules",
+            "define a shared SkillSpec",
+            "add match(context) and run(context) interfaces",
+            "separate templates from orchestration logic"
+          ],
+          "target_modules": [
+            "src/mathagent/agents/specialists_v3.py",
+            "src/mathagent/skills/__init__.py"
+          ],
+          "new_modules": [
+            "src/mathagent/skills/solver_skills/forecast.py",
+            "src/mathagent/skills/solver_skills/optimization.py",
+            "src/mathagent/skills/solver_skills/path.py",
+            "src/mathagent/skills/solver_skills/evaluation.py"
+          ],
+          "expected_outputs": [
+            "modular reusable skills",
+            "clearer extension path",
+            "less monolithic coding agent logic"
+          ]
+        },
+        {
+          "id": "automatic_replanning",
+          "title": "Add Automatic Replanning",
+          "priority": "medium",
+          "description": "Let the system detect what needs to be recomputed when the user adds new constraints, uploads new data, or changes only the writing requirements.",
+          "todo": [
+            "classify incoming changes by impact scope",
+            "reuse unaffected solver results when possible",
+            "rerun only affected stages and subproblems"
+          ],
+          "target_modules": [
+            "src/mathagent/web/service.py",
+            "src/mathagent/agents/manager.py"
+          ],
+          "new_modules": [
+            "src/mathagent/planning/replan.py"
+          ],
+          "expected_outputs": [
+            "faster incremental updates",
+            "less full-pipeline rerunning",
+            "more natural multi-turn collaboration"
+          ]
+        },
+        {
+          "id": "report_template_upgrade",
+          "title": "Upgrade Report Templates",
+          "priority": "medium",
+          "description": "Provide more detailed and style-aware report templates, including contest-oriented and academic variants, with support for Chinese and English output.",
+          "todo": [
+            "split report into finer sections and templates",
+            "support multiple report styles",
+            "support bilingual output modes"
+          ],
+          "target_modules": [
+            "src/mathagent/reporting.py",
+            "src/mathagent/prompts.py"
+          ],
+          "new_modules": [
+            "templates/reports/cn_contest.md",
+            "templates/reports/mcm_style.md"
+          ],
+          "expected_outputs": [
+            "style-aware reports",
+            "more controllable paper structure",
+            "cleaner chapter-level generation"
+          ]
+        },
+        {
+          "id": "chart_generation",
+          "title": "Add Chart Generation",
+          "priority": "medium",
+          "description": "Generate charts from solver results and reference them inside the final report.",
+          "todo": [
+            "create chart artifacts from numeric results",
+            "store charts as artifacts",
+            "embed or reference charts in reports"
+          ],
+          "target_modules": [
+            "src/mathagent/tools",
+            "src/mathagent/reporting.py"
+          ],
+          "new_modules": [
+            "src/mathagent/tools/chart_builder.py"
+          ],
+          "expected_outputs": [
+            "trend and comparison charts",
+            "artifact-backed visual evidence",
+            "richer paper drafts"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "v0.4",
+      "goal": "turn the system into a platform-like prototype",
+      "focus": [
+        "history management",
+        "data preview and manual mapping",
+        "artifact browser",
+        "external tools"
+      ],
+      "tasks": [
+        {
+          "id": "history_management",
+          "title": "Build History Management",
+          "priority": "medium",
+          "description": "Add session listing, search, reopen, and clone behavior in the web interface.",
+          "todo": [
+            "show all stored sessions",
+            "search sessions by metadata",
+            "clone old session as a new task"
+          ],
+          "target_modules": [
+            "src/mathagent/web/api.py",
+            "frontend/src/App.tsx"
+          ]
+        },
+        {
+          "id": "data_preview_and_mapping",
+          "title": "Add Data Preview and Manual Column Mapping",
+          "priority": "high",
+          "description": "After upload, let the user preview tables and manually correct semantic column mappings when heuristics are insufficient.",
+          "todo": [
+            "preview uploaded tables in frontend",
+            "allow manual role mapping for columns",
+            "persist corrected mappings into session state"
+          ],
+          "target_modules": [
+            "src/mathagent/io/loaders_v2.py",
+            "src/mathagent/web/service.py",
+            "frontend/src/App.tsx"
+          ],
+          "expected_outputs": [
+            "fewer table-mapping failures",
+            "user-correctable column semantics"
+          ]
+        },
+        {
+          "id": "artifact_browser",
+          "title": "Build an Artifact Browser",
+          "priority": "medium",
+          "description": "Let users inspect solver code, result.json, intermediate data, and generated figures from the web UI.",
+          "todo": [
+            "list artifacts by run and subproblem",
+            "preview text/json/code artifacts",
+            "link report content back to artifacts"
+          ],
+          "target_modules": [
+            "src/mathagent/web/service.py",
+            "src/mathagent/web/api.py",
+            "frontend/src/App.tsx"
+          ]
+        },
+        {
+          "id": "external_tool_expansion",
+          "title": "Expand External Tooling",
+          "priority": "medium",
+          "description": "Add richer tool integrations such as LaTeX export, PDF export, reference management, and external retrieval.",
+          "todo": [
+            "support LaTeX export",
+            "support PDF export",
+            "add reference retrieval and management hooks"
+          ],
+          "target_modules": [
+            "src/mathagent/tools",
+            "src/mathagent/web/api.py"
+          ]
+        }
+      ]
+    },
+    {
+      "version": "v1.0",
+      "goal": "become a usable mathematical modeling paper production system",
+      "focus": [
+        "multi-turn collaboration",
+        "subproblem-level solving",
+        "strong verifier",
+        "paper-grade output",
+        "traceable evidence",
+        "web productization"
+      ],
+      "capabilities": [
+        "chat-like multi-turn collaboration",
+        "independent solving per subproblem",
+        "strong automatic verification",
+        "complete markdown and latex paper output",
+        "traceable evidence for major conclusions",
+        "production-style web experience"
+      ]
+    }
+  ],
+  "next_step_recommendation": {
+    "primary": "v0.2",
+    "first_implementation_batch": [
+      "session_persistence",
+      "unified_error_system"
+    ],
+    "reason": "These two tasks improve usability immediately and make later verifier and evidence work much easier to build and debug."
+  },
+  "current_files_most_likely_to_change_first": [
+    "src/mathagent/web/service.py",
+    "src/mathagent/web/api.py",
+    "src/mathagent/state.py",
+    "src/mathagent/agents/specialists_v3.py",
+    "src/mathagent/reporting.py",
+    "frontend/src/App.tsx"
+  ]
+}

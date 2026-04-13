@@ -6,10 +6,12 @@ from typing import Annotated
 from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .service import WebSessionService
+from ..errors import AppError, internal_error
+from .service_v2 import WebSessionService
 
 
 class MessageRequest(BaseModel):
@@ -58,47 +60,59 @@ def meta() -> dict[str, object]:
 
 @app.post("/api/sessions")
 def create_session() -> dict[str, object]:
-    return service.create_session()
+    try:
+        return service.create_session()
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
+
+
+@app.get("/api/sessions")
+def list_sessions() -> dict[str, object]:
+    try:
+        return {"sessions": service.list_sessions()}
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
 
 
 @app.get("/api/sessions/{session_id}")
 def get_session(session_id: str) -> dict[str, object]:
     try:
         return service.get_session_summary(session_id)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
+
+
+@app.delete("/api/sessions/{session_id}")
+def delete_session(session_id: str) -> dict[str, str]:
+    try:
+        service.delete_session(session_id)
+        return {"status": "deleted"}
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
 
 
 @app.post("/api/sessions/{session_id}/messages")
 def add_message(session_id: str, payload: MessageRequest) -> dict[str, object]:
     try:
         return service.add_message(session_id, payload.content)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
 
 
 @app.post("/api/sessions/{session_id}/sections")
 def set_sections(session_id: str, payload: SectionsRequest) -> dict[str, object]:
     try:
         return service.set_report_sections(session_id, payload.sections)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
 
 
 @app.post("/api/sessions/{session_id}/run")
 def run_session(session_id: str, payload: RunRequest) -> dict[str, object]:
     try:
         return service.run_session(session_id, sections=payload.sections)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
 
 
 @app.get("/api/sessions/{session_id}/report")
@@ -108,10 +122,8 @@ def get_report(
 ) -> dict[str, object]:
     try:
         return service.get_report(session_id, sections=sections)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
 
 
 @app.post("/api/sessions/{session_id}/files")
@@ -125,12 +137,19 @@ async def upload_files(
         for file in files:
             payload.append((file.filename or "upload.bin", await file.read()))
         return service.upload_files(session_id, role=role, files=payload)
-    except KeyError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except RuntimeError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except AppError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.to_payload()) from exc
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(_, exc: Exception):
+    app_error = internal_error(
+        "internal_server_error",
+        "The server encountered an unexpected error.",
+        stage="api",
+        exception_type=type(exc).__name__,
+    )
+    return JSONResponse(status_code=app_error.status_code, content={"detail": app_error.to_payload()})
 
 
 @app.get("/", response_model=None)

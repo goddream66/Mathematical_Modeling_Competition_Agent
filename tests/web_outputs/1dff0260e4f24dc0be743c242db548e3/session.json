@@ -1,0 +1,255 @@
+{
+  "session_id": "1dff0260e4f24dc0be743c242db548e3",
+  "created_at": "2026-04-13T09:56:08Z",
+  "updated_at": "2026-04-13T09:56:09Z",
+  "root_dir": "tests\\web_outputs\\1dff0260e4f24dc0be743c242db548e3",
+  "messages": [
+    "Problem 1: forecast demand for 3 days using values 5 7 9 11."
+  ],
+  "problem_files": [],
+  "data_files": [],
+  "selected_sections": [],
+  "latest_state": {
+    "stage": "done",
+    "clarifications": [
+      "Which variables are the decision variables, state variables, and outputs?",
+      "Which constraints must always hold?",
+      "Which claims require quantitative evidence before they can appear in the final paper?"
+    ],
+    "subproblem_count": 1,
+    "subproblems": [
+      {
+        "title": "Problem 1",
+        "objective": "建立预测模型并给出可解释的误差评估。",
+        "chosen_method": "线性/非线性回归",
+        "task_types": [
+          "预测/拟合"
+        ]
+      }
+    ],
+    "solver_run_count": 1,
+    "solver_runs": [
+      {
+        "subproblem_title": "Problem 1",
+        "success": true,
+        "schema_valid": true,
+        "summary": "Forecast solver template generated a baseline result for Problem 1.",
+        "structured_result": {
+          "subproblem_title": "Problem 1",
+          "status": "ok",
+          "method": "线性/非线性回归",
+          "objective": "建立预测模型并给出可解释的误差评估。",
+          "assumptions": [
+            "变量定义清晰且可以被观测、估计或求解。",
+            "原始题面没有说明的外部环境在分析周期内保持相对稳定。",
+            "历史数据对未来具有一定代表性。"
+          ],
+          "constraints": [
+            "训练与验证数据划分方式需要保持时序一致。"
+          ],
+          "result_summary": "Built a baseline forecast for horizon=1 using 5 historical points with numpy.",
+          "evidence": [
+            "template_used=baseline_forecast_template",
+            "library_used=numpy",
+            "table_name=none",
+            "selected_column=none",
+            "historical_point_count=5",
+            "average_value=7.0",
+            "average_delta=2.0000000000000004"
+          ],
+          "numeric_results": {
+            "forecast_horizon": 1,
+            "historical_point_count": 5,
+            "baseline_average": 7.0,
+            "rolling_mean": 9.0,
+            "baseline_trend": 2.0,
+            "forecast_value": 13.0
+          },
+          "artifacts": [
+            "result.json",
+            "forecast_metrics.json"
+          ],
+          "next_steps": [
+            "Replace the baseline extrapolation with a time-series model if full data is available.",
+            "Validate the forecast with MAE, RMSE, or MAPE once a hold-out set is available."
+          ]
+        },
+        "artifacts": [
+          "forecast_metrics.json",
+          "result.json"
+        ]
+      }
+    ],
+    "results": {
+      "status": "solved",
+      "solver_summary": "Problem 1: ok - Built a baseline forecast for horizon=1 using 5 historical points with numpy.",
+      "review_findings": [
+        {
+          "severity": "medium",
+          "area": "writing",
+          "message": "The report does not consistently cite evidence for Problem 1.",
+          "suggestion": "Mention this subproblem in the relevant section and connect it to numeric results or evidence markers."
+        }
+      ],
+      "solved_subproblems": [
+        "Problem 1"
+      ],
+      "partial_subproblems": [],
+      "verification_summary": {
+        "overall_verdict": "needs_attention",
+        "failed_check_count": 1,
+        "subproblem_checks": [
+          {
+            "title": "Problem 1",
+            "verdict": "ok",
+            "missing_fields": []
+          }
+        ],
+        "solver_checks": [
+          {
+            "subproblem_title": "Problem 1",
+            "verdict": "ok",
+            "issues": []
+          }
+        ],
+        "uncited_subproblems": [
+          "Problem 1"
+        ],
+        "missing_required_sections": [],
+        "report_checks": {
+          "section_count": 8,
+          "required_section_count": 7,
+          "missing_required_sections": []
+        }
+      },
+      "report_sources": {
+        "abstract": {
+          "heading": "# 摘要",
+          "present": true,
+          "referenced_subproblems": [],
+          "referenced_artifacts": [],
+          "evidence_markers": [],
+          "referenced_subproblem_count": 0,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 0,
+          "missing_subproblems": [
+            "Problem 1"
+          ]
+        },
+        "problem": {
+          "heading": "# 问题重述",
+          "present": true,
+          "referenced_subproblems": [
+            "Problem 1"
+          ],
+          "referenced_artifacts": [],
+          "evidence_markers": [],
+          "referenced_subproblem_count": 1,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 0,
+          "missing_subproblems": []
+        },
+        "analysis": {
+          "heading": "# 子问题分析与方法选择",
+          "present": true,
+          "referenced_subproblems": [
+            "Problem 1"
+          ],
+          "referenced_artifacts": [],
+          "evidence_markers": [],
+          "referenced_subproblem_count": 1,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 0,
+          "missing_subproblems": []
+        },
+        "modeling": {
+          "heading": "# 模型假设与符号说明",
+          "present": true,
+          "referenced_subproblems": [],
+          "referenced_artifacts": [],
+          "evidence_markers": [],
+          "referenced_subproblem_count": 0,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 0,
+          "missing_subproblems": [
+            "Problem 1"
+          ]
+        },
+        "solving": {
+          "heading": "# 求解与实验",
+          "present": true,
+          "referenced_subproblems": [
+            "Problem 1"
+          ],
+          "referenced_artifacts": [
+            "forecast_metrics.json",
+            "result.json"
+          ],
+          "evidence_markers": [
+            "template_used=baseline_forecast_template",
+            "library_used=numpy",
+            "table_name=none",
+            "selected_column=none",
+            "historical_point_count=5",
+            "average_value=7.0",
+            "average_delta=2.0000000000000004"
+          ],
+          "referenced_subproblem_count": 1,
+          "referenced_artifact_count": 2,
+          "referenced_evidence_count": 7,
+          "missing_subproblems": []
+        },
+        "results": {
+          "heading": "# 结果与分析",
+          "present": true,
+          "referenced_subproblems": [
+            "Problem 1"
+          ],
+          "referenced_artifacts": [],
+          "evidence_markers": [
+            "template_used=baseline_forecast_template",
+            "library_used=numpy",
+            "table_name=none",
+            "selected_column=none",
+            "historical_point_count=5",
+            "average_value=7.0",
+            "average_delta=2.0000000000000004"
+          ],
+          "referenced_subproblem_count": 1,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 7,
+          "missing_subproblems": []
+        },
+        "review": {
+          "heading": "# 审稿提示",
+          "present": true,
+          "referenced_subproblems": [
+            "Problem 1"
+          ],
+          "referenced_artifacts": [],
+          "evidence_markers": [],
+          "referenced_subproblem_count": 1,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 0,
+          "missing_subproblems": []
+        },
+        "conclusion": {
+          "heading": "# 结论与后续工作",
+          "present": true,
+          "referenced_subproblems": [],
+          "referenced_artifacts": [],
+          "evidence_markers": [],
+          "referenced_subproblem_count": 0,
+          "referenced_artifact_count": 0,
+          "referenced_evidence_count": 0,
+          "missing_subproblems": [
+            "Problem 1"
+          ]
+        }
+      }
+    }
+  },
+  "latest_report_md": "# 摘要\nThis fallback report summarizes the current modeling plan, structured solver outputs, and review findings. It explicitly marks missing evidence instead of fabricating results.\n\n# 问题重述\nProblem 1: forecast demand for 3 days using values 5 7 9 11.\n\n# 子问题分析与方法选择\n## Problem 1\nforecast demand for 3 days using values 5 7 9 11.\n\n### Objective\n建立预测模型并给出可解释的误差评估。\n\n### Candidate Models\n- 线性/非线性回归\n- ARIMA/Prophet\n- 灰色预测 GM(1,1)\n\n### Chosen Method\n线性/非线性回归\n\n### Key Variables\n- 时间索引\n- 目标变量\n- 解释变量\n\n### Constraints\n- 训练与验证数据划分方式需要保持时序一致。\n\n### Assumptions\n- 变量定义清晰且可以被观测、估计或求解。\n- 原始题面没有说明的外部环境在分析周期内保持相对稳定。\n- 历史数据对未来具有一定代表性。\n\n### Solution Plan\n- 先明确输入、输出、约束和评价指标，避免模型目标漂移。\n- 整理历史数据并检查缺失、异常值和单位一致性。\n- 先建立基线模型，再与更复杂模型做对比。\n- 使用误差指标和回测结果评估预测稳定性。\n\n### Required Data\n- 历史观测数据\n- 外部影响因素或特征变量\n\n### Evaluation\n- 检查假设是否合理、变量定义是否一致。\n- 使用 MAE、RMSE、MAPE 等误差指标。\n- 进行回测或验证集评估。\n\n# 模型假设与符号说明\n- 变量定义清晰且可以被观测、估计或求解。\n- 原始题面没有说明的外部环境在分析周期内保持相对稳定。\n- 历史数据对未来具有一定代表性。\n\n## 建模主线\n- 目标定义：建立预测模型并给出可解释的误差评估。\n- 约束梳理：训练与验证数据划分方式需要保持时序一致。\n- 构建特征和时间索引，给出训练、验证和预测流程。\n\n# 求解与实验\n## Solver Run 1: Problem 1\n- run_success: True\n- schema_valid: True\n- summary: Forecast solver template generated a baseline result for Problem 1.\n\n### Structured Result\n- status: ok\n- method: 线性/非线性回归\n- result_summary: Built a baseline forecast for horizon=1 using 5 historical points with numpy.\n\n### Numeric Results\n- forecast_horizon: 1\n- historical_point_count: 5\n- baseline_average: 7.0\n- rolling_mean: 9.0\n- baseline_trend: 2.0\n- forecast_value: 13.0\n\n### Evidence\n- template_used=baseline_forecast_template\n- library_used=numpy\n- table_name=none\n- selected_column=none\n- historical_point_count=5\n- average_value=7.0\n- average_delta=2.0000000000000004\n\n### Stdout\n```text\n{\"subproblem_title\": \"Problem 1\", \"status\": \"ok\", \"method\": \"线性/非线性回归\", \"objective\": \"建立预测模型并给出可解释的误差评估。\", \"assumptions\": [\"变量定义清晰且可以被观测、估计或求解。\", \"原始题面没有说明的外部环境在分析周期内保持相对稳定。\", \"历史数据对未来具有一定代表性。\"], \"constraints\": [\"训练与验证数据划分方式需要保持时序一致。\"], \"result_summary\": \"Built a baseline forecast for horizon=1 using 5 historical points with numpy.\", \"evidence\": [\"template_used=baseline_forecast_template\", \"library_used=numpy\", \"table_name=none\", \"selected_column=none\", \"historical_point_count=5\", \"average_value=7.0\", \"average_delta=2.0000000000000004\"], \"numeric_results\": {\"forecast_horizon\": 1, \"historical_point_count\": 5, \"baseline_average\": 7.0, \"rolling_mean\": 9.0, \"baseline_trend\": 2.0, \"forecast_value\": 13.0}, \"artifacts\": [\"result.json\", \"forecast_metrics.json\"], \"next_steps\": [\"Replace the baseline extrapolation with a time-series model if full data is available.\", \"Validate the forecast with MAE, RMSE, or MAPE once a hold-out set is available.\"]}\n```\n\n### Generated Artifacts\n- forecast_metrics.json\n- result.json\n\n# 结果与分析\nProblem 1: ok - Built a baseline forecast for horizon=1 using 5 historical points with numpy.\n\n## Structured Solver Results\n### Problem 1\n- status: ok\n- summary: Built a baseline forecast for horizon=1 using 5 historical points with numpy.\n- forecast_horizon: 1\n- historical_point_count: 5\n- baseline_average: 7.0\n- rolling_mean: 9.0\n- baseline_trend: 2.0\n- forecast_value: 13.0\n- template_used=baseline_forecast_template\n- library_used=numpy\n- table_name=none\n- selected_column=none\n- historical_point_count=5\n- average_value=7.0\n- average_delta=2.0000000000000004\n\n# 审稿提示\n- [MEDIUM] The report does not consistently cite evidence for Problem 1.\n  Suggestion: Mention this subproblem in the relevant section and connect it to numeric results or evidence markers.\n- [MEDIUM] Missing required report section: abstract.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: problem.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: analysis.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: modeling.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: solving.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: results.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: conclusion.\n  Suggestion: Restore all required sections before treating the draft as complete.\n\n# 结论与后续工作\nThe current draft already links the problem decomposition, structured solver results, and review findings. Before submission, replace baseline template results with domain-specific computations where accuracy matters.",
+  "latest_error": null,
+  "report_ready": true
+}

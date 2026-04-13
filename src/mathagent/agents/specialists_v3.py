@@ -23,6 +23,11 @@ from ..skills import (
 )
 from ..state import ExperimentArtifact, SolverRun, SubProblem, TaskState
 from ..tools import ToolRegistry
+from ..verification.checkers import (
+    build_report_sources,
+    build_verification_findings,
+    build_verification_summary,
+)
 
 
 RESULT_STATUS_VALUES = {"ok", "partial", "failed"}
@@ -960,6 +965,22 @@ def _append_finding(findings: list[dict[str, str]], *, severity: str, area: str,
     )
 
 
+def _dedupe_findings(findings: list[dict[str, str]]) -> list[dict[str, str]]:
+    seen: set[tuple[str, str, str]] = set()
+    output: list[dict[str, str]] = []
+    for finding in findings:
+        key = (
+            str(finding.get("severity") or ""),
+            str(finding.get("area") or ""),
+            str(finding.get("message") or ""),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        output.append(finding)
+    return output
+
+
 def _summarize_solver_runs(runs: list[SolverRun]) -> str:
     if not runs:
         return "No solver runs were produced."
@@ -1258,6 +1279,10 @@ class ReviewAgent:
                     )
 
         review_notes = list(state.results.get("review_notes", []))
+        verification_summary = build_verification_summary(state)
+        report_sources = build_report_sources(state)
+        findings.extend(build_verification_findings(state, verification_summary, report_sources))
+        findings = _dedupe_findings(findings)
         if findings:
             review_notes.append(f"Identified {len(findings)} review findings.")
         else:
@@ -1265,6 +1290,8 @@ class ReviewAgent:
 
         state.results["review_findings"] = findings
         state.results["review_notes"] = review_notes
+        state.results["verification_summary"] = verification_summary
+        state.results["report_sources"] = report_sources
         if state.report_md is None:
             state.results["reviewed_solution"] = True
             state.stage = "report"
