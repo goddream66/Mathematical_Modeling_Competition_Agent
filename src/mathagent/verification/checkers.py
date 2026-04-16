@@ -39,6 +39,10 @@ def build_verification_summary(state: TaskState) -> dict[str, Any]:
             issues.append("unsuccessful_run")
         if not run.structured_result.get("evidence"):
             issues.append("missing_evidence")
+        if not run.structured_result.get("verification_checks"):
+            issues.append("missing_verification_checks")
+        if str(run.structured_result.get("final_verdict") or "") in {"needs_review", "failed"}:
+            issues.append(f"final_verdict={run.structured_result.get('final_verdict')}")
         verdict = "ok" if not issues else "needs_attention"
         if issues:
             failed_checks += 1

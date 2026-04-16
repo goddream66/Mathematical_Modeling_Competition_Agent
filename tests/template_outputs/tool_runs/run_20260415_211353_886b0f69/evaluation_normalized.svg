@@ -1,0 +1,6 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='720' height='420' viewBox='0 0 720 420'>
+<rect width='100%' height='100%' fill='white'/>
+<text x='360.0' y='28' font-size='22' text-anchor='middle' fill='#111827'>Problem 4: normalized indicator profile</text>
+<line x1='70' y1='360' x2='670' y2='360' stroke='#111827' stroke-width='2'/>
+<polyline points='70.0,262.8 370.0,267.7 670.0,249.5' fill='none' stroke='#2563eb' stroke-width='3'/>
+</svg>

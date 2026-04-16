@@ -5,6 +5,7 @@ from typing import Iterable
 
 from ..llm.config import load_llm_config
 from ..memory import MemoryStore
+from ..retrieval import NullRetriever, Retriever, retrieval_result_to_payload
 from ..state import TaskState
 from ..tools import ToolRegistry
 from .base import Agent
@@ -50,12 +51,14 @@ class ManagerAgent:
     def _snapshot_state(self, state: TaskState, memory: MemoryStore) -> None:
         memory.set_shared("stage", state.stage)
         memory.set_shared("problem_text", state.problem_text)
+        memory.set_shared_json("retrieval", retrieval_result_to_payload(state.retrieval))
         memory.set_shared_json(
             "state_snapshot",
             {
                 "stage": state.stage,
                 "clarifications": state.clarifications,
                 "input_data": state.input_data,
+                "retrieval": retrieval_result_to_payload(state.retrieval),
                 "results": state.results,
                 "model": {
                     "objective": state.model.objective,
@@ -116,7 +119,7 @@ class ManagerAgent:
             return self.review.name
         if not state.report_md:
             return self.writing.name
-        if not state.results.get("final_review_done"):
+        if "final_review_done" not in state.results:
             return self.review.name
         return None
 
@@ -127,11 +130,20 @@ class ManagerAgent:
         memory: MemoryStore,
         *,
         input_data: dict | None = None,
+        retriever: Retriever | None = None,
     ) -> TaskState:
         state = TaskState(problem_text=problem_text, stage="intake", input_data=input_data or {})
+        active_retriever = retriever or NullRetriever()
+        state.retrieval = active_retriever.retrieve(
+            problem_text,
+            problem_text=problem_text,
+            input_data=state.input_data,
+            top_k=6,
+        )
         memory.set_shared("run_status", "started")
         memory.append_event("shared", self.name, "start", {"stage": state.stage})
         self._record_config(memory)
+        memory.set_shared_json("retrieval", retrieval_result_to_payload(state.retrieval))
 
         agents = self._agents()
         while True:

@@ -1,0 +1,9 @@
+{
+  "series": [],
+  "baseline_average": 0.0,
+  "baseline_trend": 0.0,
+  "forecast_value": 0.0,
+  "backtest_mae": null,
+  "backtest_rmse": null,
+  "backtest_mape": null
+}

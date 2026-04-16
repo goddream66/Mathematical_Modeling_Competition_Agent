@@ -1,0 +1,9 @@
+{
+  "candidate_costs": [],
+  "candidate_values": [],
+  "feasible_costs": [],
+  "budget": 0.0,
+  "budget_feasibility_ratio": 0.0,
+  "mean_value_per_cost": 0.0,
+  "min_budget_slack": 0.0
+}

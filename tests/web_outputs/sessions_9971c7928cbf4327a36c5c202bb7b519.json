@@ -1,0 +1,333 @@
+{
+  "9f0f72376d5d4899b82c9a82c4632532": {
+    "session_id": "9f0f72376d5d4899b82c9a82c4632532",
+    "created_at": "2026-04-15T13:14:15Z",
+    "updated_at": "2026-04-15T13:14:22Z",
+    "root_dir": "tests\\web_outputs\\9f0f72376d5d4899b82c9a82c4632532",
+    "messages": [
+      "Problem 1: forecast demand for 3 days using values 5 7 9 11."
+    ],
+    "problem_files": [],
+    "data_files": [],
+    "selected_sections": [
+      "abstract",
+      "results"
+    ],
+    "latest_state": {
+      "stage": "done",
+      "clarifications": [
+        "Which variables are the decision variables, state variables, and outputs?",
+        "Which constraints must always hold?",
+        "Which claims require quantitative evidence before they can appear in the final paper?"
+      ],
+      "subproblem_count": 1,
+      "subproblems": [
+        {
+          "title": "Problem 1",
+          "objective": "建立预测模型并给出可解释的误差评估。",
+          "chosen_method": "线性/非线性回归",
+          "task_types": [
+            "预测/拟合"
+          ]
+        }
+      ],
+      "solver_run_count": 1,
+      "solver_runs": [
+        {
+          "subproblem_title": "Problem 1",
+          "success": true,
+          "schema_valid": true,
+          "summary": "Forecast validation template generated a diagnostic bundle for Problem 1.",
+          "structured_result": {
+            "subproblem_title": "Problem 1",
+            "status": "ok",
+            "method": "线性/非线性回归",
+            "objective": "建立预测模型并给出可解释的误差评估。",
+            "assumptions": [
+              "变量定义清晰且可以被观测、估计或求解。",
+              "原始题面没有说明的外部环境在分析周期内保持相对稳定。",
+              "历史数据对未来具有一定代表性。"
+            ],
+            "constraints": [
+              "训练与验证数据划分方式需要保持时序一致。"
+            ],
+            "result_summary": "Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.",
+            "evidence": [
+              "template_used=forecast_validation_template",
+              "library_used=numpy",
+              "table_name=none",
+              "selected_column=none",
+              "historical_point_count=4",
+              "average_delta=2.0"
+            ],
+            "numeric_results": {
+              "forecast_horizon": 3,
+              "historical_point_count": 4,
+              "series_average": 8.0,
+              "rolling_mean": 9.0,
+              "rolling_std": 2.2361,
+              "average_delta": 2.0,
+              "naive_reference_forecast": 13.0,
+              "backtest_mae": 0.0,
+              "backtest_rmse": 0.0,
+              "backtest_mape": 0.0,
+              "stability_ratio": 0.2795
+            },
+            "figure_titles": [
+              "Problem 1: historical series and naive validation reference",
+              "Problem 1: one-step residual diagnostics"
+            ],
+            "artifacts": [
+              "result.json",
+              "forecast_validation.json",
+              "forecast_history.svg",
+              "forecast_residuals.svg"
+            ],
+            "next_steps": [
+              "Run the LLM-proposed forecasting algorithm and compare it against these diagnostic error metrics.",
+              "Use a hold-out window or rolling validation split before trusting the final forecast."
+            ],
+            "verification_checks": [
+              "series_length_check:passed",
+              "naive_backtest:passed",
+              "multi_chart_generation:passed",
+              "python_execution:passed",
+              "structured_schema:passed",
+              "numeric_results:present",
+              "figure_artifacts:present"
+            ],
+            "constraint_checks": [
+              "horizon_nonnegative:passed",
+              "history_available:passed",
+              "constraint_1:ok"
+            ],
+            "error_metrics": {
+              "backtest_mae": 0.0,
+              "backtest_rmse": 0.0,
+              "backtest_mape": 0.0
+            },
+            "robustness_checks": [
+              "stability_ratio=0.2795",
+              "rolling_mean_minus_last=-2.0",
+              "metric_review:error_metrics_present",
+              "temporal_validation:present"
+            ],
+            "suspicious_points": [
+              "runtime_warning:stderr_present"
+            ],
+            "final_verdict": "validated",
+            "plot_code_hint": "See forecast_history.svg and forecast_residuals.svg generation in solver_*.py."
+          },
+          "artifacts": [
+            "forecast_history.svg",
+            "forecast_residuals.svg",
+            "forecast_validation.json",
+            "result.json"
+          ]
+        }
+      ],
+      "results": {
+        "status": "solved",
+        "solver_summary": "Problem 1: ok - Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.",
+        "review_findings": [],
+        "solved_subproblems": [
+          "Problem 1"
+        ],
+        "partial_subproblems": [],
+        "verification_summary": {
+          "overall_verdict": "ok",
+          "failed_check_count": 0,
+          "subproblem_checks": [
+            {
+              "title": "Problem 1",
+              "verdict": "ok",
+              "missing_fields": []
+            }
+          ],
+          "solver_checks": [
+            {
+              "subproblem_title": "Problem 1",
+              "verdict": "ok",
+              "issues": []
+            }
+          ],
+          "uncited_subproblems": [],
+          "missing_required_sections": [],
+          "report_checks": {
+            "section_count": 8,
+            "required_section_count": 7,
+            "missing_required_sections": []
+          }
+        },
+        "report_sources": {
+          "abstract": {
+            "heading": "# 摘要",
+            "present": true,
+            "referenced_subproblems": [],
+            "referenced_artifacts": [],
+            "evidence_markers": [],
+            "numeric_result_keys": [],
+            "referenced_subproblem_count": 0,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 0,
+            "referenced_numeric_count": 0,
+            "missing_subproblems": [
+              "Problem 1"
+            ]
+          },
+          "problem": {
+            "heading": "# 问题重述",
+            "present": true,
+            "referenced_subproblems": [
+              "Problem 1"
+            ],
+            "referenced_artifacts": [],
+            "evidence_markers": [],
+            "numeric_result_keys": [],
+            "referenced_subproblem_count": 1,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 0,
+            "referenced_numeric_count": 0,
+            "missing_subproblems": []
+          },
+          "analysis": {
+            "heading": "# 子问题分析与方法选择",
+            "present": true,
+            "referenced_subproblems": [
+              "Problem 1"
+            ],
+            "referenced_artifacts": [],
+            "evidence_markers": [],
+            "numeric_result_keys": [],
+            "referenced_subproblem_count": 1,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 0,
+            "referenced_numeric_count": 0,
+            "missing_subproblems": []
+          },
+          "modeling": {
+            "heading": "# 模型假设与符号说明",
+            "present": true,
+            "referenced_subproblems": [],
+            "referenced_artifacts": [],
+            "evidence_markers": [],
+            "numeric_result_keys": [],
+            "referenced_subproblem_count": 0,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 0,
+            "referenced_numeric_count": 0,
+            "missing_subproblems": [
+              "Problem 1"
+            ]
+          },
+          "solving": {
+            "heading": "# 求解与实验",
+            "present": true,
+            "referenced_subproblems": [
+              "Problem 1"
+            ],
+            "referenced_artifacts": [
+              "forecast_history.svg",
+              "forecast_residuals.svg",
+              "forecast_validation.json",
+              "result.json"
+            ],
+            "evidence_markers": [
+              "template_used=forecast_validation_template",
+              "library_used=numpy",
+              "table_name=none",
+              "selected_column=none",
+              "historical_point_count=4",
+              "average_delta=2.0"
+            ],
+            "numeric_result_keys": [
+              "forecast_horizon",
+              "historical_point_count",
+              "series_average",
+              "rolling_mean",
+              "rolling_std",
+              "average_delta",
+              "naive_reference_forecast",
+              "backtest_mae",
+              "backtest_rmse",
+              "backtest_mape",
+              "stability_ratio"
+            ],
+            "referenced_subproblem_count": 1,
+            "referenced_artifact_count": 4,
+            "referenced_evidence_count": 6,
+            "referenced_numeric_count": 11,
+            "missing_subproblems": []
+          },
+          "results": {
+            "heading": "# 结果与分析",
+            "present": true,
+            "referenced_subproblems": [
+              "Problem 1"
+            ],
+            "referenced_artifacts": [],
+            "evidence_markers": [
+              "template_used=forecast_validation_template",
+              "library_used=numpy",
+              "table_name=none",
+              "selected_column=none",
+              "historical_point_count=4",
+              "average_delta=2.0"
+            ],
+            "numeric_result_keys": [
+              "forecast_horizon",
+              "historical_point_count",
+              "series_average",
+              "rolling_mean",
+              "rolling_std",
+              "average_delta",
+              "naive_reference_forecast",
+              "backtest_mae",
+              "backtest_rmse",
+              "backtest_mape",
+              "stability_ratio"
+            ],
+            "referenced_subproblem_count": 1,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 6,
+            "referenced_numeric_count": 11,
+            "missing_subproblems": []
+          },
+          "review": {
+            "heading": "# 审稿提示",
+            "present": true,
+            "referenced_subproblems": [
+              "Problem 1"
+            ],
+            "referenced_artifacts": [],
+            "evidence_markers": [],
+            "numeric_result_keys": [],
+            "referenced_subproblem_count": 1,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 0,
+            "referenced_numeric_count": 0,
+            "missing_subproblems": []
+          },
+          "conclusion": {
+            "heading": "# 结论与后续工作",
+            "present": true,
+            "referenced_subproblems": [
+              "Problem 1"
+            ],
+            "referenced_artifacts": [],
+            "evidence_markers": [],
+            "numeric_result_keys": [],
+            "referenced_subproblem_count": 1,
+            "referenced_artifact_count": 0,
+            "referenced_evidence_count": 0,
+            "referenced_numeric_count": 0,
+            "missing_subproblems": []
+          }
+        }
+      }
+    },
+    "latest_report_md": "# 摘要\nThis fallback report summarizes the current modeling plan, structured solver outputs, and review findings. It explicitly marks missing evidence instead of fabricating results.\n\n# 问题重述\nProblem 1: forecast demand for 3 days using values 5 7 9 11.\n\n# 子问题分析与方法选择\n## Problem 1\nforecast demand for 3 days using values 5 7 9 11.\n\n### Objective\n建立预测模型并给出可解释的误差评估。\n\n### Candidate Models\n- 线性/非线性回归\n- ARIMA/Prophet\n- 灰色预测 GM(1,1)\n\n### Chosen Method\n线性/非线性回归\n\n### Key Variables\n- 时间索引\n- 目标变量\n- 解释变量\n\n### Constraints\n- 训练与验证数据划分方式需要保持时序一致。\n\n### Assumptions\n- 变量定义清晰且可以被观测、估计或求解。\n- 原始题面没有说明的外部环境在分析周期内保持相对稳定。\n- 历史数据对未来具有一定代表性。\n\n### Solution Plan\n- 先明确输入、输出、约束和评价指标，避免模型目标漂移。\n- 整理历史数据并检查缺失、异常值和单位一致性。\n- 先建立基线模型，再与更复杂模型做对比。\n- 使用误差指标和回测结果评估预测稳定性。\n\n### Required Data\n- 历史观测数据\n- 外部影响因素或特征变量\n\n### Evaluation\n- 检查假设是否合理、变量定义是否一致。\n- 使用 MAE、RMSE、MAPE 等误差指标。\n- 进行回测或验证集评估。\n\n## Structured Subproblem Alignment\n### Problem 1\n- objective: 建立预测模型并给出可解释的误差评估。\n- chosen_method: 线性/非线性回归\n- constraint: 训练与验证数据划分方式需要保持时序一致。\n\n# 模型假设与符号说明\n- 变量定义清晰且可以被观测、估计或求解。\n- 原始题面没有说明的外部环境在分析周期内保持相对稳定。\n- 历史数据对未来具有一定代表性。\n\n## 建模主线\n- 目标定义：建立预测模型并给出可解释的误差评估。\n- 约束梳理：训练与验证数据划分方式需要保持时序一致。\n- 构建特征和时间索引，给出训练、验证和预测流程。\n\n# 求解与实验\n## Solver Run 1: Problem 1\n- run_success: True\n- schema_valid: True\n- summary: Forecast validation template generated a diagnostic bundle for Problem 1.\n\n### Structured Result\n- status: ok\n- method: 线性/非线性回归\n- result_summary: Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.\n- final_verdict: validated\n\n### Numeric Results\n- forecast_horizon: 3\n- historical_point_count: 4\n- series_average: 8.0\n- rolling_mean: 9.0\n- rolling_std: 2.2361\n- average_delta: 2.0\n- naive_reference_forecast: 13.0\n- backtest_mae: 0.0\n- backtest_rmse: 0.0\n- backtest_mape: 0.0\n- stability_ratio: 0.2795\n\n### Evidence\n- template_used=forecast_validation_template\n- library_used=numpy\n- table_name=none\n- selected_column=none\n- historical_point_count=4\n- average_delta=2.0\n\n### Figure Titles\n- Problem 1: historical series and naive validation reference\n- Problem 1: one-step residual diagnostics\n\n### Verification Checks\n- series_length_check:passed\n- naive_backtest:passed\n- multi_chart_generation:passed\n- python_execution:passed\n- structured_schema:passed\n- numeric_results:present\n- figure_artifacts:present\n\n### Constraint Checks\n- horizon_nonnegative:passed\n- history_available:passed\n- constraint_1:ok\n\n### Error Metrics\n- backtest_mae: 0.0\n- backtest_rmse: 0.0\n- backtest_mape: 0.0\n\n### Robustness Checks\n- stability_ratio=0.2795\n- rolling_mean_minus_last=-2.0\n- metric_review:error_metrics_present\n- temporal_validation:present\n\n### Suspicious Points\n- runtime_warning:stderr_present\n\n### Plot Code Hint\n- See forecast_history.svg and forecast_residuals.svg generation in solver_*.py.\n\n### Stdout\n```text\n{\"subproblem_title\": \"Problem 1\", \"status\": \"ok\", \"method\": \"线性/非线性回归\", \"objective\": \"建立预测模型并给出可解释的误差评估。\", \"assumptions\": [\"变量定义清晰且可以被观测、估计或求解。\", \"原始题面没有说明的外部环境在分析周期内保持相对稳定。\", \"历史数据对未来具有一定代表性。\"], \"constraints\": [\"训练与验证数据划分方式需要保持时序一致。\"], \"result_summary\": \"Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.\", \"evidence\": [\"template_used=forecast_validation_template\", \"library_used=numpy\", \"table_name=none\", \"selected_column=none\", \"historical_point_count=4\", \"average_delta=2.0\"], \"numeric_results\": {\"forecast_horizon\": 3, \"historical_point_count\": 4, \"series_average\": 8.0, \"rolling_mean\": 9.0, \"rolling_std\": 2.2361, \"average_delta\": 2.0, \"naive_reference_forecast\": 13.0, \"backtest_mae\": 0.0, \"backtest_rmse\": 0.0, \"backtest_mape\": 0.0, \"stability_ratio\": 0.2795}, \"figure_titles\": [\"Problem 1: historical series and naive validation reference\", \"Problem 1: one-step residual diagnostics\"], \"artifacts\": [\"result.json\", \"forecast_validation.json\", \"forecast_history.svg\", \"forecast_residuals.svg\"], \"verification_checks\": [\"series_length_check:passed\", \"naive_backtest:passed\", \"multi_chart_generation:passed\"], \"constraint_checks\": [\"horizon_nonnegative:passed\", \"history_available:passed\"], \"error_metrics\": {\"backtest_mae\": 0.0, \"backtest_rmse\": 0.0, \"backtest_mape\": 0.0}, \"robustness_checks\": [\"stability_ratio=0.2795\", \"rolling_mean_minus_last=-2.0\"], \"suspicious_points\": [], \"final_verdict\": \"validated\", \"plot_code_hint\": \"See forecast_history.svg and forecast_residuals.svg generation in solver_*.py.\", \"next_steps\": [\"Run the LLM-proposed forecasting algorithm and compare it against these diagnostic error metrics.\", \"Use a hold-out window or rolling validation split before trusting the final forecast.\"]}\n```\n\n### Stderr\n```text\nRecovered from CODING generation failure: LLM 请求失败：<urlopen error [WinError 10061] 由于目标计算机积极拒绝，无法连接。>\n```\n\n### Generated Artifacts\n- forecast_history.svg\n- forecast_residuals.svg\n- forecast_validation.json\n- result.json\n\n## Structured Solver Runs\n### Problem 1\n- status: ok\n- method: 线性/非线性回归\n- result_summary: Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.\n- evidence: template_used=forecast_validation_template\n- evidence: library_used=numpy\n- evidence: table_name=none\n- evidence: selected_column=none\n- evidence: historical_point_count=4\n- evidence: average_delta=2.0\n- artifact: forecast_history.svg\n- artifact: forecast_residuals.svg\n- artifact: forecast_validation.json\n- artifact: result.json\n\n# 结果与分析\nProblem 1: ok - Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.\n\n## Structured Solver Results\n### Problem 1\n- status: ok\n- summary: Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.\n- final_verdict: validated\n- forecast_horizon: 3\n- historical_point_count: 4\n- series_average: 8.0\n- rolling_mean: 9.0\n- rolling_std: 2.2361\n- average_delta: 2.0\n- naive_reference_forecast: 13.0\n- backtest_mae: 0.0\n- backtest_rmse: 0.0\n- backtest_mape: 0.0\n- stability_ratio: 0.2795\n- error_metric_backtest_mae: 0.0\n- error_metric_backtest_rmse: 0.0\n- error_metric_backtest_mape: 0.0\n- template_used=forecast_validation_template\n- library_used=numpy\n- table_name=none\n- selected_column=none\n- historical_point_count=4\n- average_delta=2.0\n#### Figure Titles\n- Problem 1: historical series and naive validation reference\n- Problem 1: one-step residual diagnostics\n#### Verification Checks\n- series_length_check:passed\n- naive_backtest:passed\n- multi_chart_generation:passed\n- python_execution:passed\n- structured_schema:passed\n- numeric_results:present\n- figure_artifacts:present\n\n## Structured Results Alignment\n### Problem 1\n- status: ok\n- final_verdict: validated\n- forecast_horizon: 3\n- historical_point_count: 4\n- series_average: 8.0\n- rolling_mean: 9.0\n- rolling_std: 2.2361\n- average_delta: 2.0\n- naive_reference_forecast: 13.0\n- backtest_mae: 0.0\n- backtest_rmse: 0.0\n- backtest_mape: 0.0\n- stability_ratio: 0.2795\n- error_metric_backtest_mae: 0.0\n- error_metric_backtest_rmse: 0.0\n- error_metric_backtest_mape: 0.0\n- evidence: template_used=forecast_validation_template\n- evidence: library_used=numpy\n- evidence: table_name=none\n- evidence: selected_column=none\n- evidence: historical_point_count=4\n- evidence: average_delta=2.0\n- figure_title: Problem 1: historical series and naive validation reference\n- figure_title: Problem 1: one-step residual diagnostics\n- verification_check: series_length_check:passed\n- verification_check: naive_backtest:passed\n- verification_check: multi_chart_generation:passed\n- verification_check: python_execution:passed\n- verification_check: structured_schema:passed\n- verification_check: numeric_results:present\n\n## 图表标题\nFigure Titles generated by the backend:\n### Problem 1\n- 图1：Problem 1: historical series and naive validation reference\n- 图2：Problem 1: one-step residual diagnostics\n\n# 审稿提示\n- [MEDIUM] The report does not consistently cite evidence for Problem 1.\n  Suggestion: Mention this subproblem in the relevant section and connect it to numeric results or evidence markers.\n- [MEDIUM] Missing required report section: abstract.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: problem.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: analysis.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: modeling.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: solving.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: results.\n  Suggestion: Restore all required sections before treating the draft as complete.\n- [MEDIUM] Missing required report section: conclusion.\n  Suggestion: Restore all required sections before treating the draft as complete.\n\n# 结论与后续工作\nThe current draft already links the problem decomposition, structured solver results, and review findings. Before submission, replace baseline template results with domain-specific computations where accuracy matters.\n\n## Review Conclusion\n- solved_subproblems: Problem 1\n- partial_subproblems: none\n- solver_status: solved",
+    "latest_error": null,
+    "report_ready": true
+  }
+}

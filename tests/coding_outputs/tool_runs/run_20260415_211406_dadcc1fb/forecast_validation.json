@@ -1,0 +1,11 @@
+{
+  "series": [],
+  "series_average": 0.0,
+  "average_delta": 0.0,
+  "naive_reference_forecast": 0.0,
+  "residuals": [],
+  "backtest_mae": null,
+  "backtest_rmse": null,
+  "backtest_mape": null,
+  "stability_ratio": 0.0
+}

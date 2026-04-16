@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from .retrieval import RetrievalResult
+
 
 Stage = Literal[
     "intake",
@@ -91,4 +93,5 @@ class TaskState:
     artifacts: list[ExperimentArtifact] = field(default_factory=list)
     solver_runs: list[SolverRun] = field(default_factory=list)
     conversation: list[ConversationTurn] = field(default_factory=list)
+    retrieval: RetrievalResult = field(default_factory=RetrievalResult)
     report_md: str | None = None

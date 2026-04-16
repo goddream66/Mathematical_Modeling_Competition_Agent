@@ -1,0 +1,17 @@
+{
+  "weights": [
+    9.0,
+    4.0,
+    7.0,
+    3.0
+  ],
+  "edge_count_estimate": 4,
+  "graph_node_count": 0,
+  "distance_reference_sum": 23.0,
+  "cumulative_weights": [
+    9.0,
+    13.0,
+    20.0,
+    23.0
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "subproblem_title": "Problem 1",
+  "status": "ok",
+  "method": "线性/非线性回归",
+  "objective": "建立预测模型并给出可解释的误差评估。",
+  "assumptions": [
+    "变量定义清晰且可以被观测、估计或求解。",
+    "原始题面没有说明的外部环境在分析周期内保持相对稳定。",
+    "历史数据对未来具有一定代表性。"
+  ],
+  "constraints": [
+    "训练与验证数据划分方式需要保持时序一致。"
+  ],
+  "result_summary": "Generated a forecast validation bundle for horizon=5 using 5 observed points with numpy.",
+  "evidence": [
+    "template_used=forecast_validation_template",
+    "library_used=numpy",
+    "table_name=none",
+    "selected_column=none",
+    "historical_point_count=5",
+    "average_delta=2.5"
+  ],
+  "numeric_results": {
+    "forecast_horizon": 5,
+    "historical_point_count": 5,
+    "series_average": 15.0,
+    "rolling_mean": 17.6667,
+    "rolling_std": 3.6878,
+    "average_delta": 2.5,
+    "naive_reference_forecast": 22.5,
+    "backtest_mae": 0.5833,
+    "backtest_rmse": 0.5893,
+    "backtest_mape": 0.0306,
+    "stability_ratio": 0.2459
+  },
+  "figure_titles": [
+    "Problem 1: historical series and naive validation reference",
+    "Problem 1: one-step residual diagnostics"
+  ],
+  "artifacts": [
+    "result.json",
+    "forecast_validation.json",
+    "forecast_history.svg",
+    "forecast_residuals.svg"
+  ],
+  "verification_checks": [
+    "series_length_check:passed",
+    "naive_backtest:passed",
+    "multi_chart_generation:passed"
+  ],
+  "constraint_checks": [
+    "horizon_nonnegative:passed",
+    "history_available:passed"
+  ],
+  "error_metrics": {
+    "backtest_mae": 0.5833,
+    "backtest_rmse": 0.5893,
+    "backtest_mape": 0.0306
+  },
+  "robustness_checks": [
+    "stability_ratio=0.2459",
+    "rolling_mean_minus_last=-2.3333"
+  ],
+  "suspicious_points": [],
+  "final_verdict": "validated",
+  "plot_code_hint": "See forecast_history.svg and forecast_residuals.svg generation in solver_*.py.",
+  "next_steps": [
+    "Run the LLM-proposed forecasting algorithm and compare it against these diagnostic error metrics.",
+    "Use a hold-out window or rolling validation split before trusting the final forecast."
+  ]
+}

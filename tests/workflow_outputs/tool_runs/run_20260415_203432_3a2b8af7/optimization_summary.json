@@ -1,0 +1,9 @@
+{
+  "candidate_costs": [],
+  "selected_costs": [],
+  "budget": 0.0,
+  "chosen_cost": 0.0,
+  "remaining_budget": 0.0,
+  "budget_utilization": 0.0,
+  "selected_value": 0.0
+}

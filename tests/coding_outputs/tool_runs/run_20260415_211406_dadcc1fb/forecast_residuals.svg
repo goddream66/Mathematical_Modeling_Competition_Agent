@@ -1,0 +1,7 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='760' height='420' viewBox='0 0 760 420'>
+<rect width='100%' height='100%' fill='white'/>
+<text x='380.0' y='28' font-size='22' text-anchor='middle' fill='#111827'>Problem 1: one-step residual diagnostics</text>
+<line x1='70' y1='205.0' x2='710' y2='205.0' stroke='#111827' stroke-width='2'/>
+<rect x='78.0' y='205.0' width='28' height='1.5' fill='#dc2626' rx='4'/>
+<text x='92.0' y='380' font-size='12' text-anchor='middle'>r1</text>
+</svg>

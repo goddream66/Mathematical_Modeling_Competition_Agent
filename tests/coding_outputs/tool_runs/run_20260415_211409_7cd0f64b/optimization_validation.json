@@ -1,0 +1,15 @@
+{
+  "candidate_costs": [
+    100.0
+  ],
+  "candidate_values": [
+    100.0
+  ],
+  "feasible_costs": [
+    100.0
+  ],
+  "budget": 100.0,
+  "budget_feasibility_ratio": 1.0,
+  "mean_value_per_cost": 1.0,
+  "min_budget_slack": 0.0
+}

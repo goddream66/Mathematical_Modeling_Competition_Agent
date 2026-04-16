@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 
 from mathagent.orchestrator import Orchestrator
 from mathagent.reporting import required_report_titles
@@ -40,28 +40,28 @@ class VerificationSummaryTest(unittest.TestCase):
         self.assertTrue(any("does not consistently cite evidence" in message for message in messages))
 
     def test_verification_findings_escalate_results_without_evidence(self) -> None:
-        subproblem = SubProblem(title="问题 1", text="给出一个结构化求解结果。")
-        subproblem.analysis.objective = "输出一个结果。"
-        subproblem.analysis.constraints = ["必须引用证据。"]
-        subproblem.analysis.chosen_method = "示例方法"
+        subproblem = SubProblem(title="Problem 1", text="Produce a structured result.")
+        subproblem.analysis.objective = "Produce a scored result."
+        subproblem.analysis.constraints = ["Evidence must be cited."]
+        subproblem.analysis.chosen_method = "demo_method"
         state = TaskState(
-            problem_text="问题 1：给出一个结构化求解结果。",
+            problem_text="Problem 1: produce a structured result.",
             subproblems=[subproblem],
             solver_runs=[
                 SolverRun(
-                    subproblem_title="问题 1",
+                    subproblem_title="Problem 1",
                     success=True,
                     summary="ok",
                     code="print('ok')",
                     schema_valid=True,
                     structured_result={
-                        "subproblem_title": "问题 1",
+                        "subproblem_title": "Problem 1",
                         "status": "ok",
-                        "method": "demo",
-                        "objective": "输出一个结果。",
-                        "assumptions": ["示例假设"],
-                        "constraints": ["必须引用证据。"],
-                        "result_summary": "生成了结构化结果。",
+                        "method": "demo_method",
+                        "objective": "Produce a scored result.",
+                        "assumptions": ["demo"],
+                        "constraints": ["Evidence must be cited."],
+                        "result_summary": "Generated a structured result.",
                         "evidence": ["marker=demo"],
                         "numeric_results": {"score": 1},
                         "figure_titles": [],
@@ -79,19 +79,19 @@ class VerificationSummaryTest(unittest.TestCase):
                     "问题重述。",
                     "",
                     "# 子问题分析与方法选择",
-                    "## 问题 1",
+                    "## Problem 1",
                     "分析内容。",
                     "",
                     "# 模型假设与符号说明",
                     "建模内容。",
                     "",
                     "# 求解与实验",
-                    "## 问题 1",
-                    "- method: demo",
+                    "## Problem 1",
+                    "- method: demo_method",
                     "",
                     "# 结果与分析",
-                    "## 问题 1",
-                    "这里只给出一个笼统结论，没有引用任何证据。",
+                    "## Problem 1",
+                    "这里只给出笼统结论，没有引用任何证据。",
                     "",
                     "# 结论与后续工作",
                     "结论。",

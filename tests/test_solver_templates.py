@@ -20,11 +20,27 @@ class SolverTemplateTest(unittest.TestCase):
 
         evidence_sets = [set(run.structured_result.get("evidence", [])) for run in state.solver_runs]
         all_evidence = set().union(*evidence_sets)
-        self.assertIn("template_used=baseline_forecast_template", all_evidence)
-        self.assertIn("template_used=baseline_optimization_template", all_evidence)
-        self.assertIn("template_used=baseline_path_template", all_evidence)
-        self.assertIn("template_used=baseline_evaluation_template", all_evidence)
-        self.assertTrue(any(item.startswith("library_used=") for item in all_evidence))
+        self.assertIn("template_used=forecast_validation_template", all_evidence)
+        self.assertIn("template_used=optimization_validation_template", all_evidence)
+        self.assertIn("template_used=path_validation_template", all_evidence)
+        self.assertIn("template_used=evaluation_validation_template", all_evidence)
+
+        forecast_run = state.solver_runs[0].structured_result
+        optimization_run = state.solver_runs[1].structured_result
+        path_run = state.solver_runs[2].structured_result
+        evaluation_run = state.solver_runs[3].structured_result
+
+        self.assertIn("backtest_mae", forecast_run["numeric_results"])
+        self.assertIn("naive_reference_forecast", forecast_run["numeric_results"])
+        self.assertIn("budget_feasibility_ratio", optimization_run["numeric_results"])
+        self.assertIn("mean_value_per_cost", optimization_run["numeric_results"])
+        self.assertIn("path_weight_mean", path_run["numeric_results"])
+        self.assertIn("distance_reference_sum", path_run["numeric_results"])
+        self.assertIn("normalized_entropy", evaluation_run["numeric_results"])
+        self.assertTrue(len(forecast_run.get("figure_titles", [])) >= 2)
+        self.assertTrue(len(optimization_run.get("figure_titles", [])) >= 2)
+        self.assertTrue(len(path_run.get("figure_titles", [])) >= 2)
+        self.assertTrue(len(evaluation_run.get("figure_titles", [])) >= 2)
 
     def test_geometry_problem_uses_geometry_template(self) -> None:
         problem_text = (

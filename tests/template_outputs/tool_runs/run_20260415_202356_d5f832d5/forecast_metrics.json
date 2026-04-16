@@ -1,0 +1,15 @@
+{
+  "series": [
+    10.0,
+    12.0,
+    15.0,
+    18.0,
+    20.0
+  ],
+  "baseline_average": 15.0,
+  "baseline_trend": 2.600000000000002,
+  "forecast_value": 22.6,
+  "backtest_mae": 0.5999999999999979,
+  "backtest_rmse": 0.6082762530298201,
+  "backtest_mape": 3.1388888888888773
+}

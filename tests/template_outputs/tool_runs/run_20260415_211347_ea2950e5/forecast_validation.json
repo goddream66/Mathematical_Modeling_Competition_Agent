@@ -1,0 +1,22 @@
+{
+  "series": [
+    10.0,
+    12.0,
+    15.0,
+    18.0,
+    20.0
+  ],
+  "series_average": 15.0,
+  "average_delta": 2.5,
+  "naive_reference_forecast": 22.5,
+  "residuals": [
+    -0.5,
+    0.5,
+    0.5,
+    -0.5
+  ],
+  "backtest_mae": 0.5833333333333339,
+  "backtest_rmse": 0.5892556509887903,
+  "backtest_mape": 0.030555555555555586,
+  "stability_ratio": 0.24585451886114368
+}

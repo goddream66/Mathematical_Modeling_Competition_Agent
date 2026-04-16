@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from typing import Any
 
 from .state import TaskState
 
@@ -253,6 +254,7 @@ def render_fallback_report(state: TaskState) -> str:
                         f"- status: {structured.get('status', 'unknown')}",
                         f"- method: {structured.get('method', 'unknown')}",
                         f"- result_summary: {structured.get('result_summary', 'n/a')}",
+                        f"- final_verdict: {structured.get('final_verdict', 'n/a')}",
                         "",
                     ]
                 )
@@ -268,6 +270,27 @@ def render_fallback_report(state: TaskState) -> str:
                 figure_titles = [str(item) for item in structured.get("figure_titles", []) if str(item).strip()]
                 if figure_titles:
                     lines.extend(["### Figure Titles", *_render_bullets(figure_titles), ""])
+                verification_checks = [str(item) for item in structured.get("verification_checks", []) if str(item).strip()]
+                if verification_checks:
+                    lines.extend(["### Verification Checks", *_render_bullets(verification_checks), ""])
+                constraint_checks = [str(item) for item in structured.get("constraint_checks", []) if str(item).strip()]
+                if constraint_checks:
+                    lines.extend(["### Constraint Checks", *_render_bullets(constraint_checks), ""])
+                error_metrics = dict(structured.get("error_metrics", {}))
+                if error_metrics:
+                    lines.append("### Error Metrics")
+                    for key, value in error_metrics.items():
+                        lines.append(f"- {key}: {value}")
+                    lines.append("")
+                robustness_checks = [str(item) for item in structured.get("robustness_checks", []) if str(item).strip()]
+                if robustness_checks:
+                    lines.extend(["### Robustness Checks", *_render_bullets(robustness_checks), ""])
+                suspicious_points = [str(item) for item in structured.get("suspicious_points", []) if str(item).strip()]
+                if suspicious_points:
+                    lines.extend(["### Suspicious Points", *_render_bullets(suspicious_points), ""])
+                plot_code_hint = str(structured.get("plot_code_hint") or "").strip()
+                if plot_code_hint:
+                    lines.extend(["### Plot Code Hint", f"- {plot_code_hint}", ""])
             lines.extend(
                 [
                     "### Stdout",
@@ -312,14 +335,21 @@ def render_fallback_report(state: TaskState) -> str:
             lines.append(f"### {item.get('subproblem_title', 'subproblem')}")
             lines.append(f"- status: {item.get('status', 'unknown')}")
             lines.append(f"- summary: {item.get('result_summary', 'n/a')}")
+            if str(item.get("final_verdict") or "").strip():
+                lines.append(f"- final_verdict: {item.get('final_verdict')}")
             for key, value in dict(item.get("numeric_results", {})).items():
                 lines.append(f"- {key}: {value}")
+            for key, value in dict(item.get("error_metrics", {})).items():
+                lines.append(f"- error_metric_{key}: {value}")
             evidence = [str(x) for x in item.get("evidence", [])]
             if evidence:
                 lines.extend(_render_bullets(evidence))
             figure_titles = [str(x) for x in item.get("figure_titles", []) if str(x).strip()]
             if figure_titles:
                 lines.extend(["#### Figure Titles", *_render_bullets(figure_titles)])
+            verification_checks = [str(x) for x in item.get("verification_checks", []) if str(x).strip()]
+            if verification_checks:
+                lines.extend(["#### Verification Checks", *_render_bullets(verification_checks)])
             lines.append("")
 
     findings = state.results.get("review_findings", [])
@@ -343,10 +373,173 @@ def render_fallback_report(state: TaskState) -> str:
     return "\n".join(lines)
 
 
+def stabilize_report_markdown(markdown: str, state: TaskState) -> str:
+    titles = required_report_titles()
+    report = markdown.strip()
+    if not report:
+        report = f"{titles[0]}\nPending report generation."
+
+    report = _upsert_report_section(
+        report,
+        titles[2],
+        _build_analysis_alignment_block(state),
+        "## Structured Subproblem Alignment",
+    )
+    report = _upsert_report_section(
+        report,
+        titles[4],
+        _build_solving_alignment_block(state),
+        "## Structured Solver Runs",
+    )
+    report = _upsert_report_section(
+        report,
+        titles[5],
+        _build_results_alignment_block(state),
+        "## Structured Results Alignment",
+    )
+    report = _upsert_report_section(
+        report,
+        titles[6],
+        _build_conclusion_alignment_block(state),
+        "## Review Conclusion",
+    )
+    return report.strip()
+
+
 def _render_bullets(items: list[str], *, empty_text: str = "No details yet") -> list[str]:
     if not items:
         return [f"- {empty_text}"]
     return [f"- {item}" for item in items]
+
+
+def _split_top_level_sections(markdown: str) -> list[list[str]]:
+    if not markdown.strip():
+        return []
+    sections: list[list[str]] = []
+    current: list[str] = []
+    for line in markdown.splitlines():
+        if line.startswith("# "):
+            if current:
+                sections.append(current)
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        sections.append(current)
+    return sections
+
+
+def _upsert_report_section(markdown: str, heading: str, content: str, marker: str) -> str:
+    content = content.strip()
+    if not content:
+        return markdown.strip()
+
+    sections = _split_top_level_sections(markdown)
+    if not sections:
+        return f"{heading}\n{content}".strip()
+
+    updated_sections: list[str] = []
+    inserted = False
+    for section_lines in sections:
+        section_text = "\n".join(section_lines).rstrip()
+        if section_lines[0].strip() == heading:
+            if marker and marker in section_text:
+                updated_sections.append(section_text)
+            else:
+                updated_sections.append((section_text + "\n\n" + content).strip())
+            inserted = True
+        else:
+            updated_sections.append(section_text)
+    if not inserted:
+        updated_sections.append(f"{heading}\n{content}".strip())
+    return "\n\n".join(part for part in updated_sections if part).strip()
+
+
+def _format_key_value_bullets(data: dict[str, Any]) -> list[str]:
+    return [f"- {key}: {value}" for key, value in data.items()]
+
+
+def _build_analysis_alignment_block(state: TaskState) -> str:
+    lines = ["## Structured Subproblem Alignment"]
+    for subproblem in state.subproblems:
+        analysis = subproblem.analysis
+        lines.extend(
+            [
+                f"### {subproblem.title}",
+                f"- objective: {analysis.objective or 'pending'}",
+                f"- chosen_method: {analysis.chosen_method or 'pending'}",
+            ]
+        )
+        constraints = analysis.constraints or ["pending_constraint"]
+        lines.extend(f"- constraint: {item}" for item in constraints)
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _build_solving_alignment_block(state: TaskState) -> str:
+    lines = ["## Structured Solver Runs"]
+    if not state.solver_runs:
+        lines.append("- No solver runs were produced yet.")
+        return "\n".join(lines)
+
+    for run in state.solver_runs:
+        structured = run.structured_result
+        lines.extend(
+            [
+                f"### {run.subproblem_title}",
+                f"- status: {structured.get('status', 'unknown')}",
+                f"- method: {structured.get('method', 'unknown')}",
+                f"- result_summary: {structured.get('result_summary', run.summary)}",
+            ]
+        )
+        evidence = [str(item) for item in structured.get("evidence", []) if str(item).strip()]
+        if evidence:
+            lines.extend(f"- evidence: {item}" for item in evidence[:6])
+        if run.artifacts:
+            lines.extend(f"- artifact: {item}" for item in run.artifacts[:6])
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _build_results_alignment_block(state: TaskState) -> str:
+    lines = ["## Structured Results Alignment"]
+    if not state.solver_runs:
+        lines.append("- No structured results are available yet.")
+        return "\n".join(lines)
+
+    for run in state.solver_runs:
+        structured = run.structured_result
+        lines.append(f"### {run.subproblem_title}")
+        lines.append(f"- status: {structured.get('status', 'unknown')}")
+        if str(structured.get("final_verdict") or "").strip():
+            lines.append(f"- final_verdict: {structured.get('final_verdict')}")
+        numeric_results = dict(structured.get("numeric_results", {}))
+        if numeric_results:
+            lines.extend(_format_key_value_bullets(numeric_results))
+        error_metrics = dict(structured.get("error_metrics", {}))
+        if error_metrics:
+            lines.extend(f"- error_metric_{key}: {value}" for key, value in error_metrics.items())
+        evidence = [str(item) for item in structured.get("evidence", []) if str(item).strip()]
+        if evidence:
+            lines.extend(f"- evidence: {item}" for item in evidence[:8])
+        figure_titles = [str(item) for item in structured.get("figure_titles", []) if str(item).strip()]
+        if figure_titles:
+            lines.extend(f"- figure_title: {item}" for item in figure_titles)
+        verification_checks = [str(item) for item in structured.get("verification_checks", []) if str(item).strip()]
+        if verification_checks:
+            lines.extend(f"- verification_check: {item}" for item in verification_checks[:6])
+        lines.append("")
+    return "\n".join(lines).strip()
+
+
+def _build_conclusion_alignment_block(state: TaskState) -> str:
+    solved = state.results.get("solved_subproblems", [])
+    partial = state.results.get("partial_subproblems", [])
+    lines = ["## Review Conclusion"]
+    lines.append(f"- solved_subproblems: {', '.join(solved) if solved else 'none'}")
+    lines.append(f"- partial_subproblems: {', '.join(partial) if partial else 'none'}")
+    lines.append(f"- solver_status: {state.results.get('status', 'unknown')}")
+    return "\n".join(lines)
 
 
 def _split_section_tokens(raw: str) -> list[str]:
@@ -396,3 +589,6 @@ def _split_markdown_sections(markdown: str) -> list[tuple[str, str]]:
     if current_lines:
         sections.append((current_title, "\n".join(current_lines).strip()))
     return sections
+
+
+from .reporting_rewrite import *  # noqa: F401,F403,E402

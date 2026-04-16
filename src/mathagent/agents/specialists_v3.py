@@ -12,7 +12,15 @@ from ..llm.config import load_llm_config
 from ..llm.utils import extract_first_json
 from ..memory import MemoryStore
 from ..prompts import render_prompt
-from ..reporting import inject_figure_titles, required_report_titles
+from ..reviewing import (
+    build_solver_repair_findings,
+    build_structural_review_findings,
+    dedupe_findings,
+    has_blocking_review_findings,
+    required_review_report_sections,
+)
+from ..retrieval import format_retrieval_context, retrieval_result_to_payload
+from ..reporting import inject_figure_titles, stabilize_report_markdown
 from ..solvers import build_fallback_solver_code as builtin_build_fallback_solver_code
 from ..skills import (
     ClarifySkill,
@@ -50,6 +58,15 @@ def _figure_titles(value: Any) -> list[str]:
     return _string_list(value)
 
 
+def _check_list(value: Any) -> list[str]:
+    return _string_list(value)
+
+
+def _final_verdict(value: Any) -> str:
+    verdict = str(value or "").strip().lower()
+    return verdict if verdict in {"validated", "needs_review", "failed"} else ""
+
+
 _PLACEHOLDER_TEXT_MARKERS = (
     "formal constraints still need to be written explicitly",
     "constraints still need to be written",
@@ -83,11 +100,6 @@ def _prefer_existing_title(candidate_title: str, fallback_title: str) -> str:
     if re.fullmatch(r"(subproblem|problem)\s*\d+", normalized):
         return fallback_title
     return title
-
-
-def _has_baseline_structured_solver_marker(structured_result: dict[str, Any]) -> bool:
-    evidence = [str(item).strip() for item in structured_result.get("evidence", []) if str(item).strip()]
-    return "template_used=baseline_structured_solver" in evidence
 
 
 def _subproblem_payload(subproblem: SubProblem) -> dict[str, Any]:
@@ -133,6 +145,14 @@ def _solver_runs_payload(state: TaskState) -> list[dict[str, Any]]:
     ]
 
 
+def _retrieval_payload(state: TaskState, *, query: str, limit: int = 4) -> dict[str, Any]:
+    return retrieval_result_to_payload(state.retrieval, query=query, limit=limit)
+
+
+def _retrieval_prompt_context(state: TaskState, *, query: str, limit: int = 4) -> str:
+    return format_retrieval_context(state.retrieval, query=query, limit=limit)
+
+
 def _load_solver_artifacts(run_dir: str, artifact_names: list[str]) -> list[ExperimentArtifact]:
     base_path = Path(run_dir)
     artifacts: list[ExperimentArtifact] = []
@@ -162,6 +182,7 @@ def _load_solver_artifacts(run_dir: str, artifact_names: list[str]) -> list[Expe
 
 
 def _build_solver_context(state: TaskState, subproblem: SubProblem, index: int) -> dict[str, Any]:
+    retrieval_query = subproblem.text or subproblem.title or state.problem_text
     return {
         "problem_text": state.problem_text,
         "clarifications": state.clarifications,
@@ -169,6 +190,7 @@ def _build_solver_context(state: TaskState, subproblem: SubProblem, index: int) 
         "subproblem": _subproblem_payload(subproblem),
         "all_subproblems": _subproblems_payload(state),
         "input_data": state.input_data,
+        "retrieval": _retrieval_payload(state, query=retrieval_query, limit=4),
         "model": {
             "assumptions": state.model.assumptions,
             "constraints": state.model.constraints,
@@ -200,6 +222,16 @@ def _normalize_numeric_results(value: Any) -> dict[str, float | int | str]:
         else:
             normalized[clean_key] = str(raw).strip()
     return normalized
+
+
+def _error_metrics_from_numeric_results(numeric_results: dict[str, float | int | str]) -> dict[str, float | int | str]:
+    metrics: dict[str, float | int | str] = {}
+    keywords = ("error", "mae", "rmse", "mape", "residual", "loss", "accuracy", "precision", "recall", "f1", "score")
+    for key, value in numeric_results.items():
+        lowered = str(key).lower()
+        if any(keyword in lowered for keyword in keywords):
+            metrics[str(key)] = value
+    return metrics
 
 
 def _synthesize_evidence(normalized: dict[str, Any]) -> list[str]:
@@ -247,8 +279,17 @@ def _validate_result_schema(payload: Any, expected_title: str) -> tuple[bool, di
         "figure_titles": _figure_titles(payload.get("figure_titles")),
         "artifacts": _string_list(payload.get("artifacts")),
         "next_steps": _string_list(payload.get("next_steps")),
+        "verification_checks": _check_list(payload.get("verification_checks")),
+        "constraint_checks": _check_list(payload.get("constraint_checks")),
+        "error_metrics": _normalize_numeric_results(payload.get("error_metrics")),
+        "robustness_checks": _check_list(payload.get("robustness_checks")),
+        "suspicious_points": _check_list(payload.get("suspicious_points")),
+        "final_verdict": _final_verdict(payload.get("final_verdict")),
+        "plot_code_hint": str(payload.get("plot_code_hint") or "").strip(),
     }
     normalized["evidence"] = _synthesize_evidence(normalized)
+    if not normalized["error_metrics"]:
+        normalized["error_metrics"] = _error_metrics_from_numeric_results(normalized["numeric_results"])
 
     if not normalized["subproblem_title"]:
         return False, normalized, "missing subproblem_title"
@@ -324,6 +365,238 @@ def _should_retry_with_fallback(*, code: str, fallback_code: str, run_success: b
     return any(marker in combined for marker in retry_markers)
 
 
+def _derive_verification_checks(
+    *,
+    run_success: bool,
+    schema_valid: bool,
+    structured_result: dict[str, Any],
+    artifacts: list[str],
+) -> list[str]:
+    checks = [str(item).strip() for item in structured_result.get("verification_checks", []) if str(item).strip()]
+    observed = set(checks)
+
+    derived = [
+        f"python_execution:{'passed' if run_success else 'failed'}",
+        f"structured_schema:{'passed' if schema_valid else 'failed'}",
+        f"numeric_results:{'present' if dict(structured_result.get('numeric_results', {})) else 'missing'}",
+        f"figure_artifacts:{'present' if any(name.lower().endswith(('.png', '.jpg', '.jpeg', '.svg')) for name in artifacts) else 'missing'}",
+    ]
+    if str(structured_result.get("status") or "") in {"partial", "failed"}:
+        derived.append(f"solver_status:{structured_result.get('status')}")
+    for item in derived:
+        if item not in observed:
+            checks.append(item)
+            observed.add(item)
+    return checks
+
+
+def _derive_constraint_checks(structured_result: dict[str, Any]) -> list[str]:
+    existing = [str(item).strip() for item in structured_result.get("constraint_checks", []) if str(item).strip()]
+    observed = set(existing)
+    status = str(structured_result.get("status") or "unknown")
+    constraints = [str(item).strip() for item in structured_result.get("constraints", []) if str(item).strip()]
+    if not constraints:
+        item = "constraint_review:constraints_not_explicitly_checkable"
+        return existing + ([item] if item not in observed else [])
+
+    derived: list[str] = []
+    limit = min(len(constraints), 3)
+    for index in range(limit):
+        derived.append(f"constraint_{index + 1}:{status}")
+    for item in derived:
+        if item not in observed:
+            existing.append(item)
+            observed.add(item)
+    return existing
+
+
+def _derive_robustness_checks(structured_result: dict[str, Any]) -> list[str]:
+    existing = [str(item).strip() for item in structured_result.get("robustness_checks", []) if str(item).strip()]
+    observed = set(existing)
+    numeric_results = dict(structured_result.get("numeric_results", {}))
+    error_metrics = dict(structured_result.get("error_metrics", {}))
+    evidence = [str(item).strip() for item in structured_result.get("evidence", []) if str(item).strip()]
+    derived: list[str] = []
+
+    if error_metrics:
+        derived.append("metric_review:error_metrics_present")
+    if any("backtest" in str(key).lower() or "validation" in str(key).lower() for key in numeric_results):
+        derived.append("temporal_validation:present")
+    if any("sensitivity" in item.lower() or "robust" in item.lower() for item in evidence):
+        derived.append("sensitivity_check:present")
+    if not derived:
+        derived.append("robustness_review:manual_follow_up_recommended")
+
+    for item in derived:
+        if item not in observed:
+            existing.append(item)
+            observed.add(item)
+    return existing
+
+
+def _derive_suspicious_points(
+    *,
+    stderr: str,
+    structured_result: dict[str, Any],
+    repair_findings: list[dict[str, str]] | None = None,
+) -> list[str]:
+    existing = [str(item).strip() for item in structured_result.get("suspicious_points", []) if str(item).strip()]
+    observed = set(existing)
+    if stderr.strip():
+        item = "runtime_warning:stderr_present"
+        if item not in observed:
+            existing.append(item)
+            observed.add(item)
+    if str(structured_result.get("status") or "") == "partial":
+        item = "result_status:partial"
+        if item not in observed:
+            existing.append(item)
+            observed.add(item)
+    for finding in repair_findings or []:
+        message = str(finding.get("message") or "").strip()
+        if message and message not in observed:
+            existing.append(message)
+            observed.add(message)
+    return existing
+
+
+def _derive_final_verdict(*, run_success: bool, schema_valid: bool, structured_result: dict[str, Any]) -> str:
+    existing = _final_verdict(structured_result.get("final_verdict"))
+    if existing:
+        return existing
+    status = str(structured_result.get("status") or "")
+    if not run_success or not schema_valid or status == "failed":
+        return "failed"
+    if status == "partial":
+        return "needs_review"
+    if dict(structured_result.get("numeric_results", {})):
+        return "validated"
+    return "needs_review"
+
+
+def _enrich_structured_result(
+    *,
+    structured_result: dict[str, Any],
+    run_success: bool,
+    schema_valid: bool,
+    stderr: str,
+    artifacts: list[str],
+    script_name: str,
+    repair_findings: list[dict[str, str]] | None = None,
+) -> dict[str, Any]:
+    updated = dict(structured_result)
+    updated["error_metrics"] = _normalize_numeric_results(updated.get("error_metrics")) or _error_metrics_from_numeric_results(
+        dict(updated.get("numeric_results", {}))
+    )
+    updated["verification_checks"] = _derive_verification_checks(
+        run_success=run_success,
+        schema_valid=schema_valid,
+        structured_result=updated,
+        artifacts=artifacts,
+    )
+    updated["constraint_checks"] = _derive_constraint_checks(updated)
+    updated["robustness_checks"] = _derive_robustness_checks(updated)
+    updated["suspicious_points"] = _derive_suspicious_points(
+        stderr=stderr,
+        structured_result=updated,
+        repair_findings=repair_findings,
+    )
+    updated["final_verdict"] = _derive_final_verdict(
+        run_success=run_success,
+        schema_valid=schema_valid,
+        structured_result=updated,
+    )
+    if not str(updated.get("plot_code_hint") or "").strip() and updated.get("figure_titles"):
+        updated["plot_code_hint"] = f"See {script_name} for backend chart generation code."
+    return updated
+
+
+def _build_solver_repair_signals(
+    subproblem: SubProblem,
+    *,
+    run_success: bool,
+    summary: str,
+    code: str,
+    stdout: str,
+    stderr: str,
+    artifacts: list[str],
+    structured_result: dict[str, Any],
+    schema_valid: bool,
+) -> list[dict[str, str]]:
+    candidate = SolverRun(
+        subproblem_title=subproblem.title,
+        success=run_success and schema_valid and structured_result.get("status") in {"ok", "partial"},
+        summary=summary,
+        code=code,
+        stdout=stdout,
+        stderr=stderr,
+        artifacts=artifacts,
+        structured_result=structured_result,
+        schema_valid=schema_valid,
+    )
+    return build_solver_repair_findings(candidate, subproblem.analysis, context_text=subproblem.text)
+
+
+def _repair_findings_weight(findings: list[dict[str, str]]) -> int:
+    weights = {"high": 3, "medium": 2, "low": 1}
+    return sum(weights.get(str(item.get("severity") or "").lower(), 1) for item in findings)
+
+
+def _summarize_repair_findings(findings: list[dict[str, str]]) -> str:
+    messages = [str(item.get("message") or "").strip() for item in findings if str(item.get("message") or "").strip()]
+    return "; ".join(messages[:2])
+
+
+def _prefer_fallback_repair_candidate(
+    current_result: dict[str, Any],
+    current_findings: list[dict[str, str]],
+    fallback_schema_valid: bool,
+    fallback_result: dict[str, Any],
+    fallback_findings: list[dict[str, str]],
+) -> bool:
+    if not fallback_schema_valid or not fallback_result:
+        return False
+
+    current_score = _repair_findings_weight(current_findings)
+    fallback_score = _repair_findings_weight(fallback_findings)
+    if fallback_score < current_score:
+        return True
+
+    current_status = str(current_result.get("status") or "")
+    fallback_status = str(fallback_result.get("status") or "")
+    return current_status in {"partial", "failed"} and fallback_status == "ok"
+
+
+def _downgrade_weak_result(structured_result: dict[str, Any], findings: list[dict[str, str]]) -> dict[str, Any]:
+    if not structured_result or not findings:
+        return structured_result
+
+    updated = dict(structured_result)
+    if str(updated.get("status") or "") == "ok":
+        updated["status"] = "partial"
+
+    summary = str(updated.get("result_summary") or "").strip()
+    issue_summary = _summarize_repair_findings(findings)
+    repair_note = "Auto-check flagged incomplete solver evidence."
+    if issue_summary:
+        repair_note = f"Auto-check flagged incomplete solver evidence: {issue_summary}"
+    if repair_note not in summary:
+        updated["result_summary"] = f"{summary} {repair_note}".strip()
+
+    evidence = [str(item).strip() for item in updated.get("evidence", []) if str(item).strip()]
+    if "auto_check=repair_needed" not in evidence:
+        evidence.append("auto_check=repair_needed")
+    updated["evidence"] = evidence
+
+    next_steps = [str(item).strip() for item in updated.get("next_steps", []) if str(item).strip()]
+    for finding in findings:
+        suggestion = str(finding.get("suggestion") or "").strip()
+        if suggestion and suggestion not in next_steps:
+            next_steps.append(suggestion)
+    updated["next_steps"] = next_steps
+    return updated
+
+
 
 def _build_fallback_solver_code(context: dict[str, Any]) -> tuple[str, str]:
     return builtin_build_fallback_solver_code(context)
@@ -345,6 +618,11 @@ def _build_llm_solver(state: TaskState, subproblem: SubProblem, index: int) -> t
                 content=render_prompt(
                     "coding_user",
                     problem_text=state.problem_text,
+                    retrieval_context=_retrieval_prompt_context(
+                        state,
+                        query=subproblem.text or subproblem.title or state.problem_text,
+                        limit=4,
+                    ),
                     context_json=json.dumps(context, ensure_ascii=False, indent=2),
                 ),
             ),
@@ -380,34 +658,7 @@ def _build_llm_solver(state: TaskState, subproblem: SubProblem, index: int) -> t
 
 
 def _required_report_sections() -> list[str]:
-    return required_report_titles()
-
-
-def _append_finding(findings: list[dict[str, str]], *, severity: str, area: str, message: str, suggestion: str) -> None:
-    findings.append(
-        {
-            "severity": severity,
-            "area": area,
-            "message": message,
-            "suggestion": suggestion,
-        }
-    )
-
-
-def _dedupe_findings(findings: list[dict[str, str]]) -> list[dict[str, str]]:
-    seen: set[tuple[str, str, str]] = set()
-    output: list[dict[str, str]] = []
-    for finding in findings:
-        key = (
-            str(finding.get("severity") or ""),
-            str(finding.get("area") or ""),
-            str(finding.get("message") or ""),
-        )
-        if key in seen:
-            continue
-        seen.add(key)
-        output.append(finding)
-    return output
+    return required_review_report_sections()
 
 
 def _summarize_solver_runs(runs: list[SolverRun]) -> str:
@@ -434,164 +685,6 @@ def _overall_solver_status(runs: list[SolverRun]) -> str:
     return "partially_solved"
 
 
-def _split_top_level_sections(markdown: str) -> list[list[str]]:
-    if not markdown.strip():
-        return []
-    sections: list[list[str]] = []
-    current: list[str] = []
-    for line in markdown.splitlines():
-        if line.startswith("# "):
-            if current:
-                sections.append(current)
-            current = [line]
-        else:
-            current.append(line)
-    if current:
-        sections.append(current)
-    return sections
-
-
-def _upsert_report_section(markdown: str, heading: str, content: str, marker: str) -> str:
-    content = content.strip()
-    if not content:
-        return markdown.strip()
-
-    sections = _split_top_level_sections(markdown)
-    if not sections:
-        return f"{heading}\n{content}".strip()
-
-    updated_sections: list[str] = []
-    inserted = False
-    for section_lines in sections:
-        section_text = "\n".join(section_lines).rstrip()
-        if section_lines[0].strip() == heading:
-            if marker and marker in section_text:
-                updated_sections.append(section_text)
-            else:
-                updated_sections.append((section_text + "\n\n" + content).strip())
-            inserted = True
-        else:
-            updated_sections.append(section_text)
-    if not inserted:
-        updated_sections.append(f"{heading}\n{content}".strip())
-    return "\n\n".join(part for part in updated_sections if part).strip()
-
-
-def _format_key_value_bullets(data: dict[str, Any]) -> list[str]:
-    lines: list[str] = []
-    for key, value in data.items():
-        lines.append(f"- {key}: {value}")
-    return lines
-
-
-def _build_analysis_alignment_block(state: TaskState) -> str:
-    lines = ["## Structured Subproblem Alignment"]
-    for subproblem in state.subproblems:
-        analysis = subproblem.analysis
-        lines.extend(
-            [
-                f"### {subproblem.title}",
-                f"- objective: {analysis.objective or 'pending'}",
-                f"- chosen_method: {analysis.chosen_method or 'pending'}",
-            ]
-        )
-        constraints = analysis.constraints or ["pending_constraint"]
-        lines.extend(f"- constraint: {item}" for item in constraints)
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _build_solving_alignment_block(state: TaskState) -> str:
-    lines = ["## Structured Solver Runs"]
-    if not state.solver_runs:
-        lines.append("- No solver runs were produced yet.")
-        return "\n".join(lines)
-
-    for run in state.solver_runs:
-        structured = run.structured_result
-        lines.extend(
-            [
-                f"### {run.subproblem_title}",
-                f"- status: {structured.get('status', 'unknown')}",
-                f"- method: {structured.get('method', 'unknown')}",
-                f"- result_summary: {structured.get('result_summary', run.summary)}",
-            ]
-        )
-        evidence = [str(item) for item in structured.get("evidence", []) if str(item).strip()]
-        if evidence:
-            lines.extend(f"- evidence: {item}" for item in evidence[:6])
-        if run.artifacts:
-            lines.extend(f"- artifact: {item}" for item in run.artifacts[:6])
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _build_results_alignment_block(state: TaskState) -> str:
-    lines = ["## Structured Results Alignment"]
-    if not state.solver_runs:
-        lines.append("- No structured results are available yet.")
-        return "\n".join(lines)
-
-    for run in state.solver_runs:
-        structured = run.structured_result
-        lines.append(f"### {run.subproblem_title}")
-        lines.append(f"- status: {structured.get('status', 'unknown')}")
-        numeric_results = dict(structured.get("numeric_results", {}))
-        if numeric_results:
-            lines.extend(_format_key_value_bullets(numeric_results))
-        evidence = [str(item) for item in structured.get("evidence", []) if str(item).strip()]
-        if evidence:
-            lines.extend(f"- evidence: {item}" for item in evidence[:8])
-        figure_titles = [str(item) for item in structured.get("figure_titles", []) if str(item).strip()]
-        if figure_titles:
-            lines.extend(f"- figure_title: {item}" for item in figure_titles)
-        lines.append("")
-    return "\n".join(lines).strip()
-
-
-def _build_conclusion_alignment_block(state: TaskState) -> str:
-    solved = state.results.get("solved_subproblems", [])
-    partial = state.results.get("partial_subproblems", [])
-    lines = ["## Review Conclusion"]
-    lines.append(f"- solved_subproblems: {', '.join(solved) if solved else 'none'}")
-    lines.append(f"- partial_subproblems: {', '.join(partial) if partial else 'none'}")
-    lines.append(f"- solver_status: {state.results.get('status', 'unknown')}")
-    return "\n".join(lines)
-
-
-def _stabilize_report_markdown(markdown: str, state: TaskState) -> str:
-    titles = required_report_titles()
-    report = markdown.strip()
-    if not report:
-        report = f"{titles[0]}\nPending report generation."
-
-    report = _upsert_report_section(
-        report,
-        titles[2],
-        _build_analysis_alignment_block(state),
-        "## Structured Subproblem Alignment",
-    )
-    report = _upsert_report_section(
-        report,
-        titles[4],
-        _build_solving_alignment_block(state),
-        "## Structured Solver Runs",
-    )
-    report = _upsert_report_section(
-        report,
-        titles[5],
-        _build_results_alignment_block(state),
-        "## Structured Results Alignment",
-    )
-    report = _upsert_report_section(
-        report,
-        titles[6],
-        _build_conclusion_alignment_block(state),
-        "## Review Conclusion",
-    )
-    return report.strip()
-
-
 @dataclass(frozen=True)
 class ModelingAgent:
     name: str = "modeling"
@@ -616,6 +709,11 @@ class ModelingAgent:
                                 content=render_prompt(
                                     "modeling_user",
                                     problem_text=state.problem_text,
+                                    retrieval_context=_retrieval_prompt_context(
+                                        state,
+                                        query=state.problem_text,
+                                        limit=6,
+                                    ),
                                     existing_subproblems_json=json.dumps(
                                         _subproblems_payload(state),
                                         ensure_ascii=False,
@@ -661,6 +759,7 @@ class ModelingAgent:
                 memory.append_event("agent", self.name, "llm_error", {"error": str(exc)})
 
         memory.set_shared("problem_text", state.problem_text)
+        memory.set_shared_json("retrieval", _retrieval_payload(state, query=state.problem_text, limit=6))
         memory.set_shared_json("subproblems", _subproblems_payload(state))
         memory.set_agent_json(self.name, "clarifications", state.clarifications)
         memory.set_agent_json(
@@ -701,6 +800,7 @@ class CodingAgent:
         for index, subproblem in enumerate(state.subproblems, start=1):
             context = _build_solver_context(state, subproblem, index)
             fallback_summary, fallback_code = _build_fallback_solver_code(context)
+            current_filename = f"solver_{index}.py"
             generation_error = ""
             try:
                 summary, code = _build_llm_solver(state, subproblem, index)
@@ -711,7 +811,7 @@ class CodingAgent:
             result = tool.run(
                 {
                     "code": code,
-                    "filename": f"solver_{index}.py",
+                    "filename": current_filename,
                     "context": context,
                     "timeout_s": 20.0,
                 }
@@ -765,6 +865,84 @@ class CodingAgent:
                     schema_error = fallback_schema_error
                     summary = f"{fallback_summary} Retried automatically after CODING execution failed."
                     code = fallback_code
+                    current_filename = f"solver_{index}_fallback.py"
+
+            repair_findings: list[dict[str, str]] = []
+            if schema_valid and structured_result:
+                repair_findings = _build_solver_repair_signals(
+                    subproblem,
+                    run_success=run_success,
+                    summary=summary,
+                    code=code,
+                    stdout=str(result.get("stdout") or ""),
+                    stderr=stderr_text,
+                    artifacts=[str(name) for name in result.get("artifacts") or []],
+                    structured_result=structured_result,
+                    schema_valid=schema_valid,
+                )
+
+            if repair_findings and code != fallback_code:
+                repair_reason = _summarize_repair_findings(repair_findings)
+                fallback_result = tool.run(
+                    {
+                        "code": fallback_code,
+                        "filename": f"solver_{index}_fallback.py",
+                        "context": context,
+                        "timeout_s": 20.0,
+                    }
+                )
+                fallback_run_success = bool(fallback_result.get("success"))
+                fallback_schema_valid, fallback_structured_result, fallback_schema_error = _extract_structured_result(
+                    str(fallback_result.get("run_dir") or ""),
+                    [str(name) for name in fallback_result.get("artifacts") or []],
+                    str(fallback_result.get("stdout") or ""),
+                    subproblem.title,
+                )
+                fallback_findings: list[dict[str, str]] = []
+                if fallback_schema_valid and fallback_structured_result:
+                    fallback_findings = _build_solver_repair_signals(
+                        subproblem,
+                        run_success=fallback_run_success,
+                        summary=fallback_summary,
+                        code=fallback_code,
+                        stdout=str(fallback_result.get("stdout") or ""),
+                        stderr=str(fallback_result.get("stderr") or ""),
+                        artifacts=[str(name) for name in fallback_result.get("artifacts") or []],
+                        structured_result=fallback_structured_result,
+                        schema_valid=fallback_schema_valid,
+                    )
+
+                if _prefer_fallback_repair_candidate(
+                    structured_result,
+                    repair_findings,
+                    fallback_schema_valid,
+                    fallback_structured_result,
+                    fallback_findings,
+                ):
+                    stderr_parts = [stderr_text]
+                    if repair_reason:
+                        stderr_parts.append(f"Retried with fallback solver after auto-check: {repair_reason}")
+                    fallback_stderr = str(fallback_result.get("stderr") or "")
+                    if fallback_stderr:
+                        stderr_parts.append(f"Fallback stderr: {fallback_stderr}")
+                    if fallback_schema_error:
+                        stderr_parts.append(f"Fallback schema validation failed: {fallback_schema_error}")
+                    stderr_text = "\n".join(part for part in stderr_parts if part).strip()
+                    result = fallback_result
+                    run_success = fallback_run_success
+                    schema_valid = fallback_schema_valid
+                    structured_result = fallback_structured_result
+                    schema_error = fallback_schema_error
+                    summary = f"{fallback_summary} Retried automatically after solver adequacy checks failed."
+                    code = fallback_code
+                    repair_findings = fallback_findings
+                    current_filename = f"solver_{index}_fallback.py"
+
+            if repair_findings:
+                repair_reason = _summarize_repair_findings(repair_findings)
+                if repair_reason:
+                    stderr_text = (stderr_text + f"\nAuto-check flagged incomplete solver result: {repair_reason}").strip()
+                structured_result = _downgrade_weak_result(structured_result, repair_findings)
 
             if not run_success and not structured_result:
                 structured_result = {
@@ -781,6 +959,17 @@ class CodingAgent:
                     "artifacts": [str(name) for name in result.get("artifacts") or []],
                     "next_steps": ["Inspect stderr and generated code before retrying."],
                 }
+
+            if structured_result:
+                structured_result = _enrich_structured_result(
+                    structured_result=structured_result,
+                    run_success=run_success,
+                    schema_valid=schema_valid,
+                    stderr=stderr_text,
+                    artifacts=[str(name) for name in result.get("artifacts") or []],
+                    script_name=current_filename,
+                    repair_findings=repair_findings,
+                )
 
             solver_run = SolverRun(
                 subproblem_title=subproblem.title,
@@ -831,101 +1020,13 @@ class ReviewAgent:
     def run(self, state: TaskState, tools: ToolRegistry, memory: MemoryStore) -> TaskState:
         state = ValidateSkill().run(state, tools)
 
-        findings: list[dict[str, str]] = []
-        for subproblem in state.subproblems:
-            analysis = subproblem.analysis
-            if not analysis.objective:
-                _append_finding(
-                    findings,
-                    severity="medium",
-                    area=subproblem.title,
-                    message=f"{subproblem.title} is missing an explicit objective.",
-                    suggestion="Add a clear objective or target output for this subproblem.",
-                )
-            if not analysis.chosen_method:
-                _append_finding(
-                    findings,
-                    severity="medium",
-                    area=subproblem.title,
-                    message=f"{subproblem.title} does not have a chosen primary method.",
-                    suggestion="Pick one main method from the candidate list and justify it.",
-                )
-            if not analysis.constraints:
-                _append_finding(
-                    findings,
-                    severity="medium",
-                    area=subproblem.title,
-                    message=f"{subproblem.title} still lacks explicit constraints.",
-                    suggestion="Translate hard and soft constraints from the problem statement into a list.",
-                )
-
-        if not state.solver_runs:
-            _append_finding(
-                findings,
-                severity="high",
-                area="coding",
-                message="No executable solver runs were recorded.",
-                suggestion="Run Coding again after improving the solver prompt or input data.",
-            )
-        else:
-            for run in state.solver_runs:
-                if not run.schema_valid:
-                    _append_finding(
-                        findings,
-                        severity="high",
-                        area="coding",
-                        message=f"{run.subproblem_title} did not produce a valid structured result schema.",
-                        suggestion="Require the generated code to write a valid result.json before marking success.",
-                    )
-                elif run.structured_result.get("status") == "partial":
-                    _append_finding(
-                        findings,
-                        severity="medium",
-                        area="coding",
-                        message=f"{run.subproblem_title} only has a partial structured result.",
-                        suggestion="Replace the baseline/fallback logic with a domain-specific solver or add more data.",
-                    )
-                elif run.structured_result.get("status") == "failed":
-                    _append_finding(
-                        findings,
-                        severity="high",
-                        area="coding",
-                        message=f"{run.subproblem_title} returned a failed structured result.",
-                        suggestion="Inspect the generated code, stderr, and result.json for this subproblem.",
-                    )
-                if _has_baseline_structured_solver_marker(run.structured_result):
-                    _append_finding(
-                        findings,
-                        severity="high",
-                        area="coding",
-                        message=f"{run.subproblem_title} is still using baseline_structured_solver placeholder output.",
-                        suggestion="Replace the generic baseline solver with a domain-specific solver before treating this subproblem as solved.",
-                    )
-
-        if state.report_md is not None:
-            if "## " not in state.report_md:
-                _append_finding(
-                    findings,
-                    severity="medium",
-                    area="writing",
-                    message="The report is missing detailed subsection headings.",
-                    suggestion="Add per-subproblem subsections and a dedicated results section.",
-                )
-            for run in state.solver_runs:
-                if run.subproblem_title not in state.report_md:
-                    _append_finding(
-                        findings,
-                        severity="low",
-                        area="writing",
-                        message=f"The report does not explicitly mention {run.subproblem_title}.",
-                        suggestion="Add a short paragraph summarizing the structured result for that subproblem.",
-                    )
+        findings = build_structural_review_findings(state)
 
         review_notes = list(state.results.get("review_notes", []))
         verification_summary = build_verification_summary(state)
         report_sources = build_report_sources(state)
         findings.extend(build_verification_findings(state, verification_summary, report_sources))
-        findings = _dedupe_findings(findings)
+        findings = dedupe_findings(findings)
         if findings:
             review_notes.append(f"Identified {len(findings)} review findings.")
         else:
@@ -940,14 +1041,7 @@ class ReviewAgent:
             state.stage = "report"
         else:
             state.results["report_checks"] = _required_report_sections()
-            blocking_messages = {
-                "The results section does not explicitly cite solver evidence markers.",
-            }
-            state.results["final_review_done"] = not any(
-                str(finding.get("severity") or "").lower() == "high"
-                or str(finding.get("message") or "") in blocking_messages
-                for finding in findings
-            )
+            state.results["final_review_done"] = not has_blocking_review_findings(findings)
             state.stage = "done"
 
         memory.set_agent_json(
@@ -981,6 +1075,11 @@ class WritingAgent:
                             content=render_prompt(
                                 "writing_user",
                                 problem_text=state.problem_text,
+                                retrieval_context=_retrieval_prompt_context(
+                                    state,
+                                    query=state.problem_text,
+                                    limit=6,
+                                ),
                                 subproblems_json=json.dumps(_subproblems_payload(state), ensure_ascii=False, indent=2),
                                 solver_runs_json=json.dumps(_solver_runs_payload(state), ensure_ascii=False, indent=2),
                                 review_findings_json=json.dumps(
@@ -993,7 +1092,7 @@ class WritingAgent:
                     ],
                     temperature=0.2,
                 )
-                state.report_md = inject_figure_titles(_stabilize_report_markdown(report.strip(), state), state)
+                state.report_md = inject_figure_titles(stabilize_report_markdown(report.strip(), state), state)
             except Exception as exc:
                 memory.set_agent_json(self.name, "llm_error", {"error": str(exc)})
                 memory.append_event("agent", self.name, "llm_error", {"error": str(exc)})
@@ -1002,7 +1101,7 @@ class WritingAgent:
             state = ReportSkill().run(state, tools)
 
         if state.report_md is not None:
-            state.report_md = inject_figure_titles(_stabilize_report_markdown(state.report_md, state), state)
+            state.report_md = inject_figure_titles(stabilize_report_markdown(state.report_md, state), state)
             memory.set_shared("report_md", state.report_md)
             state.stage = "review"
         memory.append_event("agent", self.name, "done", {"stage": state.stage})

@@ -7,6 +7,13 @@ from pathlib import Path
 from typing import Any
 
 from .base import SolverRegistry, SolverSpec
+from .validation_templates import (
+    build_evaluation_validation_solver_code,
+    build_forecast_validation_solver_code,
+    build_generic_validation_solver_code,
+    build_optimization_validation_solver_code,
+    build_path_validation_solver_code,
+)
 
 
 def _primary_task_type(context: dict[str, Any]) -> str:
@@ -492,6 +499,38 @@ else:
     forecast_value = avg
     status = "partial"
 
+backtest_mae = None
+backtest_rmse = None
+backtest_mape = None
+if len(series) >= 4:
+    validation_errors = []
+    validation_relative_errors = []
+    for end in range(3, len(series)):
+        history = series[:end]
+        actual = float(series[end])
+        if np is not None and len(history) >= 2:
+            history_arr = np.array(history, dtype=float)
+            candidate_forecast = float(
+                history_arr[-1] + np.polyfit(np.arange(len(history_arr)), history_arr, 1)[0]
+            )
+        else:
+            deltas = [history[i] - history[i - 1] for i in range(1, len(history))]
+            candidate_forecast = float(history[-1] + (statistics.fmean(deltas) if deltas else 0.0))
+        err = abs(candidate_forecast - actual)
+        validation_errors.append(float(err))
+        if actual:
+            validation_relative_errors.append(float(err / abs(actual)))
+    if validation_errors:
+        if np is not None:
+            error_arr = np.array(validation_errors, dtype=float)
+            backtest_mae = float(error_arr.mean())
+            backtest_rmse = float(np.sqrt((error_arr ** 2).mean()))
+        else:
+            backtest_mae = float(statistics.fmean(validation_errors))
+            backtest_rmse = float((sum(err * err for err in validation_errors) / len(validation_errors)) ** 0.5)
+        if validation_relative_errors:
+            backtest_mape = float(statistics.fmean(validation_relative_errors) * 100.0)
+
 rolling_mean = avg
 if series and pd is not None:
     rolling_mean = float(pd.Series(series, dtype="float64").rolling(min(3, len(series))).mean().iloc[-1])
@@ -578,6 +617,9 @@ result = {{
         "rolling_mean": round(rolling_mean, 4),
         "baseline_trend": round(trend, 4),
         "forecast_value": round(forecast_value, 4),
+        "backtest_mae": round(backtest_mae, 4) if backtest_mae is not None else 0.0,
+        "backtest_rmse": round(backtest_rmse, 4) if backtest_rmse is not None else 0.0,
+        "backtest_mape": round(backtest_mape, 4) if backtest_mape is not None else 0.0,
     }},
     "figure_titles": [figure_title],
     "artifacts": ["result.json", "forecast_metrics.json", figure_file],
@@ -594,6 +636,9 @@ Path("forecast_metrics.json").write_text(
             "baseline_average": avg,
             "baseline_trend": trend,
             "forecast_value": forecast_value,
+            "backtest_mae": backtest_mae,
+            "backtest_rmse": backtest_rmse,
+            "backtest_mape": backtest_mape,
         }},
         ensure_ascii=False,
         indent=2,
@@ -673,6 +718,8 @@ selected_costs = []
 selected_value = 0.0
 chosen_cost = 0.0
 remaining_budget = budget
+budget_utilization = 0.0
+selected_value_per_cost = 0.0
 if candidate_costs and budget:
     try:
         import pulp
@@ -711,6 +758,10 @@ if candidate_costs and budget:
         chosen_cost = float(best_sum)
         selected_value = float(best_value)
         remaining_budget = float(budget - chosen_cost)
+if budget > 0:
+    budget_utilization = float(chosen_cost / budget)
+if chosen_cost > 0:
+    selected_value_per_cost = float(selected_value / chosen_cost)
 status = "ok" if candidate_costs and budget else "partial"
 figure_title = f"{{subproblem['title']}}：候选成本与入选方案对比"
 figure_file = "optimization_plan.svg"
@@ -772,6 +823,8 @@ result = {{
         "chosen_cost": round(chosen_cost, 4),
         "selected_value": round(selected_value, 4),
         "remaining_budget": round(remaining_budget, 4),
+        "budget_utilization": round(budget_utilization, 4),
+        "selected_value_per_cost": round(selected_value_per_cost, 4),
         "selected_item_count": len(selected_costs),
     }},
     "figure_titles": [figure_title],
@@ -790,6 +843,8 @@ Path("optimization_summary.json").write_text(
             "budget": budget,
             "chosen_cost": chosen_cost,
             "remaining_budget": remaining_budget,
+            "budget_utilization": budget_utilization,
+            "selected_value": selected_value,
         }},
         ensure_ascii=False,
         indent=2,
@@ -824,6 +879,8 @@ source_column = None
 target_column = None
 weight_column = None
 edge_rows = []
+shortest_path = []
+graph_node_count = len(path_nodes)
 for table in tables:
     task_roles = table.get("task_roles", {{}}).get("path", {{}})
     source_column = task_roles.get("source") or table.get("column_roles", {{}}).get("source")
@@ -862,13 +919,16 @@ if numbers:
             end_node = nodes[-1]
             path_cost = float(nx.shortest_path_length(graph, start_node, end_node, weight="weight"))
             shortest_path = nx.shortest_path(graph, start_node, end_node, weight="weight")
-            path_nodes = nodes
+            path_nodes = list(shortest_path)
+            graph_node_count = len(nodes)
             edge_count = len(edge_rows)
         else:
             for i, weight in enumerate(numbers):
                 graph.add_edge(path_nodes[i], path_nodes[i + 1], weight=float(weight))
             path_cost = float(nx.shortest_path_length(graph, path_nodes[0], path_nodes[-1], weight="weight"))
             shortest_path = nx.shortest_path(graph, path_nodes[0], path_nodes[-1], weight="weight")
+            path_nodes = list(shortest_path)
+            graph_node_count = len(graph.nodes)
         library_used = "networkx"
     else:
         if edge_rows:
@@ -879,13 +939,16 @@ if numbers:
                 if node not in _unique_path:
                     _unique_path.append(node)
             path_nodes = _unique_path
+            graph_node_count = len(path_nodes)
             edge_count = len(edge_rows)
         else:
             path_cost = float(sum(numbers))
             shortest_path = path_nodes
+            graph_node_count = len(path_nodes)
 else:
     path_cost = 0.0
     shortest_path = []
+average_edge_weight = float(path_cost / max(len(shortest_path) - 1, 1)) if shortest_path else 0.0
 status = "ok" if numbers else "partial"
 figure_title = f"{{subproblem['title']}}：路径权重与总代价示意"
 figure_file = "path_summary.svg"
@@ -941,8 +1004,11 @@ result = {{
     "numeric_results": {{
         "weight_count": len(numbers),
         "edge_count_estimate": edge_count,
+        "graph_node_count": graph_node_count,
         "path_cost": round(path_cost, 4),
         "node_count": len(path_nodes),
+        "shortest_path_node_count": len(shortest_path),
+        "average_edge_weight": round(average_edge_weight, 4),
     }},
     "figure_titles": [figure_title],
     "artifacts": ["result.json", "path_summary.json", figure_file],
@@ -957,8 +1023,10 @@ Path("path_summary.json").write_text(
         {{
             "weights": numbers[:20],
             "edge_count_estimate": edge_count,
+            "graph_node_count": graph_node_count,
             "path_cost": path_cost,
             "shortest_path": shortest_path,
+            "average_edge_weight": average_edge_weight,
         }},
         ensure_ascii=False,
         indent=2,
@@ -1302,40 +1370,40 @@ def get_builtin_solver_registry() -> SolverRegistry:
             SolverSpec(
                 name="forecast",
                 matcher=_forecast_solver_score,
-                builder=_build_forecast_solver_code,
-                description="Forecasting and fitting problems.",
+                builder=build_forecast_validation_solver_code,
+                description="Forecasting validation bundle with diagnostic charts and error checks.",
             )
         )
         registry.register(
             SolverSpec(
                 name="optimization",
                 matcher=_optimization_solver_score,
-                builder=_build_optimization_solver_code,
-                description="Optimization and decision problems.",
+                builder=build_optimization_validation_solver_code,
+                description="Optimization validation bundle with feasibility and budget diagnostics.",
             )
         )
         registry.register(
             SolverSpec(
                 name="path_network",
                 matcher=_path_solver_score,
-                builder=_build_path_solver_code,
-                description="Path and network problems.",
+                builder=build_path_validation_solver_code,
+                description="Path/network validation bundle with weight and structure diagnostics.",
             )
         )
         registry.register(
             SolverSpec(
                 name="evaluation",
                 matcher=_evaluation_solver_score,
-                builder=_build_evaluation_solver_code,
-                description="Evaluation and weighting problems.",
+                builder=build_evaluation_validation_solver_code,
+                description="Evaluation validation bundle with score diagnostics and chart outputs.",
             )
         )
         registry.register(
             SolverSpec(
                 name="generic",
                 matcher=_generic_solver_score,
-                builder=_build_generic_solver_code,
-                description="Safe generic fallback for underspecified tasks.",
+                builder=build_generic_validation_solver_code,
+                description="Safe generic validation fallback for underspecified tasks.",
             )
         )
         _FALLBACK_SOLVER_REGISTRY = registry

@@ -1,0 +1,71 @@
+{
+  "subproblem_title": "Problem 1",
+  "status": "partial",
+  "method": "线性/非线性回归",
+  "objective": "建立预测模型并给出可解释的误差评估。",
+  "assumptions": [
+    "变量定义清晰且可以被观测、估计或求解。",
+    "原始题面没有说明的外部环境在分析周期内保持相对稳定。",
+    "历史数据对未来具有一定代表性。"
+  ],
+  "constraints": [
+    "训练与验证数据划分方式需要保持时序一致。"
+  ],
+  "result_summary": "Generated a forecast validation bundle for horizon=7 using 0 observed points with stdlib.",
+  "evidence": [
+    "template_used=forecast_validation_template",
+    "library_used=stdlib",
+    "table_name=none",
+    "selected_column=none",
+    "historical_point_count=0",
+    "average_delta=0.0"
+  ],
+  "numeric_results": {
+    "forecast_horizon": 7,
+    "historical_point_count": 0,
+    "series_average": 0.0,
+    "rolling_mean": 0.0,
+    "rolling_std": 0.0,
+    "average_delta": 0.0,
+    "naive_reference_forecast": 0.0,
+    "backtest_mae": 0.0,
+    "backtest_rmse": 0.0,
+    "backtest_mape": 0.0,
+    "stability_ratio": 0.0
+  },
+  "figure_titles": [
+    "Problem 1: historical series and naive validation reference",
+    "Problem 1: one-step residual diagnostics"
+  ],
+  "artifacts": [
+    "result.json",
+    "forecast_validation.json",
+    "forecast_history.svg",
+    "forecast_residuals.svg"
+  ],
+  "verification_checks": [
+    "series_length_check:limited",
+    "naive_backtest:insufficient_history",
+    "multi_chart_generation:limited"
+  ],
+  "constraint_checks": [
+    "horizon_nonnegative:passed",
+    "history_available:failed"
+  ],
+  "error_metrics": {
+    "backtest_mae": 0.0,
+    "backtest_rmse": 0.0,
+    "backtest_mape": 0.0
+  },
+  "robustness_checks": [
+    "stability_ratio=0.0",
+    "rolling_mean_minus_last=0.0"
+  ],
+  "suspicious_points": [],
+  "final_verdict": "needs_review",
+  "plot_code_hint": "See forecast_history.svg and forecast_residuals.svg generation in solver_*.py.",
+  "next_steps": [
+    "Run the LLM-proposed forecasting algorithm and compare it against these diagnostic error metrics.",
+    "Use a hold-out window or rolling validation split before trusting the final forecast."
+  ]
+}

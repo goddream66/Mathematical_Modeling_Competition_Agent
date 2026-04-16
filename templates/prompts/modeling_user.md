@@ -1,6 +1,9 @@
 Problem statement:
 {problem_text}
 
+Retrieved context (optional):
+{retrieval_context}
+
 Existing subproblems from the rule-based decomposition stage:
 {existing_subproblems_json}
 
@@ -23,4 +26,5 @@ Return a JSON array. Each item must include:
 - confidence: number between 0 and 1
 
 If the problem should not be split, still return an array with one item.
+If retrieved context is relevant, align the decomposition and method choices with it.
 Do not include any commentary outside the JSON.

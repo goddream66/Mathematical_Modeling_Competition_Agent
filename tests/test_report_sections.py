@@ -1,4 +1,4 @@
-import unittest
+﻿import unittest
 
 from mathagent.orchestrator import Orchestrator
 from mathagent.reporting import resolve_report_sections, select_report_sections
@@ -19,7 +19,7 @@ class ReportSectionsTest(unittest.TestCase):
         self.assertNotIn("# 求解与实验", report)
 
     def test_resolve_report_sections_accepts_chinese_aliases(self) -> None:
-        self.assertEqual(resolve_report_sections(["摘要", "结果"]), ["abstract", "results"])
+        self.assertEqual(resolve_report_sections(["摘要", "结果与分析"]), ["abstract", "results"])
 
 
 if __name__ == "__main__":

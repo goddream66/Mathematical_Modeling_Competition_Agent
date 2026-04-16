@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .agents import ManagerAgent
+from .retrieval import NullRetriever, Retriever
 from .state import TaskState
 from .tools import ToolRegistry
 
@@ -43,6 +44,7 @@ class _EphemeralMemory:
 class Orchestrator:
     tools: ToolRegistry
     db_path: str = "data/mathagent.db"
+    retriever: Retriever = field(default_factory=NullRetriever)
 
     def run(self, problem_text: str, *, input_data: dict[str, Any] | None = None) -> TaskState:
         memory = _EphemeralMemory()
@@ -51,4 +53,5 @@ class Orchestrator:
             tools=self.tools,
             memory=memory,
             input_data=input_data or {},
+            retriever=self.retriever,
         )

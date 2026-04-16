@@ -1,0 +1,313 @@
+{
+  "stage": "done",
+  "clarifications": [
+    "Which variables are the decision variables, state variables, and outputs?",
+    "Which constraints must always hold?",
+    "Which claims require quantitative evidence before they can appear in the final paper?"
+  ],
+  "subproblem_count": 1,
+  "subproblems": [
+    {
+      "title": "Problem 1",
+      "objective": "建立预测模型并给出可解释的误差评估。",
+      "chosen_method": "线性/非线性回归",
+      "task_types": [
+        "预测/拟合"
+      ]
+    }
+  ],
+  "solver_run_count": 1,
+  "solver_runs": [
+    {
+      "subproblem_title": "Problem 1",
+      "success": true,
+      "schema_valid": true,
+      "summary": "Forecast validation template generated a diagnostic bundle for Problem 1.",
+      "structured_result": {
+        "subproblem_title": "Problem 1",
+        "status": "ok",
+        "method": "线性/非线性回归",
+        "objective": "建立预测模型并给出可解释的误差评估。",
+        "assumptions": [
+          "变量定义清晰且可以被观测、估计或求解。",
+          "原始题面没有说明的外部环境在分析周期内保持相对稳定。",
+          "历史数据对未来具有一定代表性。"
+        ],
+        "constraints": [
+          "训练与验证数据划分方式需要保持时序一致。"
+        ],
+        "result_summary": "Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.",
+        "evidence": [
+          "template_used=forecast_validation_template",
+          "library_used=numpy",
+          "table_name=none",
+          "selected_column=none",
+          "historical_point_count=4",
+          "average_delta=2.0"
+        ],
+        "numeric_results": {
+          "forecast_horizon": 3,
+          "historical_point_count": 4,
+          "series_average": 8.0,
+          "rolling_mean": 9.0,
+          "rolling_std": 2.2361,
+          "average_delta": 2.0,
+          "naive_reference_forecast": 13.0,
+          "backtest_mae": 0.0,
+          "backtest_rmse": 0.0,
+          "backtest_mape": 0.0,
+          "stability_ratio": 0.2795
+        },
+        "figure_titles": [
+          "Problem 1: historical series and naive validation reference",
+          "Problem 1: one-step residual diagnostics"
+        ],
+        "artifacts": [
+          "result.json",
+          "forecast_validation.json",
+          "forecast_history.svg",
+          "forecast_residuals.svg"
+        ],
+        "next_steps": [
+          "Run the LLM-proposed forecasting algorithm and compare it against these diagnostic error metrics.",
+          "Use a hold-out window or rolling validation split before trusting the final forecast."
+        ],
+        "verification_checks": [
+          "series_length_check:passed",
+          "naive_backtest:passed",
+          "multi_chart_generation:passed",
+          "python_execution:passed",
+          "structured_schema:passed",
+          "numeric_results:present",
+          "figure_artifacts:present"
+        ],
+        "constraint_checks": [
+          "horizon_nonnegative:passed",
+          "history_available:passed",
+          "constraint_1:ok"
+        ],
+        "error_metrics": {
+          "backtest_mae": 0.0,
+          "backtest_rmse": 0.0,
+          "backtest_mape": 0.0
+        },
+        "robustness_checks": [
+          "stability_ratio=0.2795",
+          "rolling_mean_minus_last=-2.0",
+          "metric_review:error_metrics_present",
+          "temporal_validation:present"
+        ],
+        "suspicious_points": [
+          "runtime_warning:stderr_present"
+        ],
+        "final_verdict": "validated",
+        "plot_code_hint": "See forecast_history.svg and forecast_residuals.svg generation in solver_*.py."
+      },
+      "artifacts": [
+        "forecast_history.svg",
+        "forecast_residuals.svg",
+        "forecast_validation.json",
+        "result.json"
+      ]
+    }
+  ],
+  "results": {
+    "status": "solved",
+    "solver_summary": "Problem 1: ok - Generated a forecast validation bundle for horizon=3 using 4 observed points with numpy.",
+    "review_findings": [],
+    "solved_subproblems": [
+      "Problem 1"
+    ],
+    "partial_subproblems": [],
+    "verification_summary": {
+      "overall_verdict": "ok",
+      "failed_check_count": 0,
+      "subproblem_checks": [
+        {
+          "title": "Problem 1",
+          "verdict": "ok",
+          "missing_fields": []
+        }
+      ],
+      "solver_checks": [
+        {
+          "subproblem_title": "Problem 1",
+          "verdict": "ok",
+          "issues": []
+        }
+      ],
+      "uncited_subproblems": [],
+      "missing_required_sections": [],
+      "report_checks": {
+        "section_count": 8,
+        "required_section_count": 7,
+        "missing_required_sections": []
+      }
+    },
+    "report_sources": {
+      "abstract": {
+        "heading": "# 摘要",
+        "present": true,
+        "referenced_subproblems": [],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "numeric_result_keys": [],
+        "referenced_subproblem_count": 0,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "referenced_numeric_count": 0,
+        "missing_subproblems": [
+          "Problem 1"
+        ]
+      },
+      "problem": {
+        "heading": "# 问题重述",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "numeric_result_keys": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "referenced_numeric_count": 0,
+        "missing_subproblems": []
+      },
+      "analysis": {
+        "heading": "# 子问题分析与方法选择",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "numeric_result_keys": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "referenced_numeric_count": 0,
+        "missing_subproblems": []
+      },
+      "modeling": {
+        "heading": "# 模型假设与符号说明",
+        "present": true,
+        "referenced_subproblems": [],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "numeric_result_keys": [],
+        "referenced_subproblem_count": 0,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "referenced_numeric_count": 0,
+        "missing_subproblems": [
+          "Problem 1"
+        ]
+      },
+      "solving": {
+        "heading": "# 求解与实验",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [
+          "forecast_history.svg",
+          "forecast_residuals.svg",
+          "forecast_validation.json",
+          "result.json"
+        ],
+        "evidence_markers": [
+          "template_used=forecast_validation_template",
+          "library_used=numpy",
+          "table_name=none",
+          "selected_column=none",
+          "historical_point_count=4",
+          "average_delta=2.0"
+        ],
+        "numeric_result_keys": [
+          "forecast_horizon",
+          "historical_point_count",
+          "series_average",
+          "rolling_mean",
+          "rolling_std",
+          "average_delta",
+          "naive_reference_forecast",
+          "backtest_mae",
+          "backtest_rmse",
+          "backtest_mape",
+          "stability_ratio"
+        ],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 4,
+        "referenced_evidence_count": 6,
+        "referenced_numeric_count": 11,
+        "missing_subproblems": []
+      },
+      "results": {
+        "heading": "# 结果与分析",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [
+          "template_used=forecast_validation_template",
+          "library_used=numpy",
+          "table_name=none",
+          "selected_column=none",
+          "historical_point_count=4",
+          "average_delta=2.0"
+        ],
+        "numeric_result_keys": [
+          "forecast_horizon",
+          "historical_point_count",
+          "series_average",
+          "rolling_mean",
+          "rolling_std",
+          "average_delta",
+          "naive_reference_forecast",
+          "backtest_mae",
+          "backtest_rmse",
+          "backtest_mape",
+          "stability_ratio"
+        ],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 6,
+        "referenced_numeric_count": 11,
+        "missing_subproblems": []
+      },
+      "review": {
+        "heading": "# 审稿提示",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "numeric_result_keys": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "referenced_numeric_count": 0,
+        "missing_subproblems": []
+      },
+      "conclusion": {
+        "heading": "# 结论与后续工作",
+        "present": true,
+        "referenced_subproblems": [
+          "Problem 1"
+        ],
+        "referenced_artifacts": [],
+        "evidence_markers": [],
+        "numeric_result_keys": [],
+        "referenced_subproblem_count": 1,
+        "referenced_artifact_count": 0,
+        "referenced_evidence_count": 0,
+        "referenced_numeric_count": 0,
+        "missing_subproblems": []
+      }
+    }
+  }
+}
